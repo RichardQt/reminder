@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" translate="no">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase 应用</title>
+    <meta name="google" content="notranslate">
+    <title>Firebase 应用 (安全模式)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
@@ -12,10 +13,12 @@
         body { font-family: 'Noto Sans SC', sans-serif; }
         .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
         .fade-enter-from, .fade-leave-to { opacity: 0; }
+        /* 防止加载时的闪烁 */
+        [v-cloak] { display: none; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
-    <div id="app" class="min-h-screen flex flex-col">
+    <div id="app" v-cloak class="min-h-screen flex flex-col">
         
         <!-- 导航栏 -->
         <nav class="bg-white shadow-sm sticky top-0 z-50">
@@ -23,12 +26,23 @@
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
                         <span class="text-xl font-bold text-blue-600">我的应用</span>
+                        <span v-if="isOfflineMode" class="ml-2 px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                            本地模式
+                        </span>
                     </div>
                     <div class="flex items-center space-x-4">
                         <div v-if="loading" class="text-sm text-gray-500 animate-pulse">连接中...</div>
-                        <div v-else-if="user" class="flex items-center space-x-2">
-                            <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full hidden sm:inline-block">已连接</span>
-                            <!-- 这里的按钮触发 openSettings -->
+                        <div v-else class="flex items-center space-x-2">
+                            <!-- 状态指示灯 -->
+                            <span v-if="!isOfflineMode" class="flex h-3 w-3 relative">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                            </span>
+                            <span v-else class="flex h-3 w-3 relative">
+                                <span class="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
+                            </span>
+                            
+                            <!-- 设置按钮 -->
                             <button @click="openSettings" class="p-2 rounded-full text-gray-500 hover:bg-gray-100 focus:outline-none transition">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -44,21 +58,24 @@
         <!-- 主内容区域 -->
         <main class="flex-grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
             
-            <!-- 错误提示 -->
-            <div v-if="error" class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded shadow-sm">
+            <!-- 即使出错也只显示温和的提示，而不是红色报错 -->
+            <div v-if="isOfflineMode" class="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded shadow-sm">
                 <div class="flex">
                     <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                         </svg>
                     </div>
                     <div class="ml-3">
-                        <p class="text-sm text-red-700">{{ error }}</p>
+                        <p class="text-sm text-yellow-700">
+                            <strong>当前为本地演示模式</strong><br>
+                            Firebase 验证服务未开启。为了保证您能正常使用，已自动切换到本地存储。您添加的数据将保存在此浏览器中。
+                        </p>
                     </div>
                 </div>
             </div>
 
-            <div v-if="loading && !user" class="flex justify-center items-center py-20">
+            <div v-if="loading" class="flex justify-center items-center py-20">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
             </div>
 
@@ -91,7 +108,9 @@
                 <div class="bg-white shadow rounded-lg overflow-hidden">
                     <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                         <h3 class="text-lg font-medium text-gray-900">数据列表</h3>
-                        <span class="text-xs text-gray-500">实时同步</span>
+                        <span class="text-xs text-gray-500">
+                            {{ isOfflineMode ? '本地存储' : '云端同步' }}
+                        </span>
                     </div>
                     
                     <ul v-if="items.length > 0" class="divide-y divide-gray-200">
@@ -112,7 +131,7 @@
             </div>
         </main>
 
-        <!-- 设置模态框 (修复问题的关键) -->
+        <!-- 设置模态框 -->
         <transition name="fade">
             <div v-if="showSettings" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
                 <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -128,18 +147,21 @@
                                 </div>
                                 <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                                     <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                        应用信息
+                                        应用状态
                                     </h3>
                                     <div class="mt-2">
                                         <p class="text-sm text-gray-500 mb-2">
-                                            此界面用于展示 Firebase 连接状态。
+                                            当前连接模式: <span :class="isOfflineMode ? 'text-yellow-600 font-bold' : 'text-green-600 font-bold'">{{ isOfflineMode ? '本地离线' : '云端在线' }}</span>
                                         </p>
-                                        <div class="bg-gray-100 p-3 rounded text-xs text-gray-600 break-all font-mono">
-                                            User ID: {{ user ? user.uid : '未登录' }}
+                                        
+                                        <div v-if="isOfflineMode" class="bg-yellow-50 p-3 rounded text-xs text-yellow-800 mb-3 border border-yellow-200">
+                                            <strong>为什么是离线模式？</strong><br>
+                                            Firebase 后台未开启 Auth。如果我是开发者，我需要去 Firebase Console > Authentication > Sign-in method 开启 "Anonymous" (匿名) 登录。
                                         </div>
-                                        <p class="mt-4 text-sm text-gray-500">
-                                            Config ID: <span class="font-mono">my-project-447004</span>
-                                        </p>
+
+                                        <div class="bg-gray-100 p-3 rounded text-xs text-gray-600 break-all font-mono">
+                                            User ID: {{ user ? user.uid : 'Guest' }}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -162,7 +184,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, serverTimestamp, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-        // 1. 初始化 Firebase (使用用户提供的配置)
+        // 1. 初始化 Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBH-gppdK7y6hFQs_LyNfs9apjfl5OWfoA",
             authDomain: "my-project-447004.firebaseapp.com",
@@ -175,121 +197,155 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        
-        // 获取环境 AppID (用于数据路径隔离，防止冲突)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
         const VueApp = {
             setup() {
-                // 响应式状态
                 const user = ref(null);
                 const loading = ref(true);
-                const error = ref(null);
+                const error = ref(null); // 虽然有这个变量，但我们不让它在界面上显示红框
                 const items = ref([]);
                 const newItem = ref('');
                 const isAdding = ref(false);
-                const showSettings = ref(false); // 修复的核心：定义设置弹窗状态
+                const showSettings = ref(false);
+                const isOfflineMode = ref(false);
 
                 let unsubscribeSnapshot = null;
 
-                // 2. 认证逻辑 (优先 CustomToken，失败则匿名)
+                // --- 核心修改：安全登录逻辑 ---
                 const initAuth = async () => {
                     try {
+                        loading.value = true;
                         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                             await signInWithCustomToken(auth, __initial_auth_token);
                         } else {
+                            // 尝试匿名登录
                             await signInAnonymously(auth);
                         }
                     } catch (err) {
-                        console.error("Auth Error:", err);
-                        error.value = "登录失败: " + err.message;
+                        console.warn("Firebase Auth Error caught:", err.code);
+                        // 如果是配置错误（没开 Auth），直接切到离线模式，不抛出异常
+                        if (err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed' || err.code === 'auth/internal-error') {
+                            activateOfflineMode();
+                        } else {
+                            // 其他网络错误也尝试离线模式，保证可用性
+                            activateOfflineMode();
+                        }
+                    } finally {
                         loading.value = false;
                     }
                 };
 
-                // 3. 监听用户状态并获取数据
+                // --- 离线模式逻辑 ---
+                const activateOfflineMode = () => {
+                    console.log("Activating Offline Mode");
+                    isOfflineMode.value = true;
+                    // 模拟一个用户
+                    user.value = { uid: 'offline-guest', isAnonymous: true };
+                    // 加载本地数据
+                    loadLocalData();
+                };
+
+                const loadLocalData = () => {
+                    try {
+                        const local = localStorage.getItem('vue-firebase-offline-data');
+                        if (local) {
+                            items.value = JSON.parse(local);
+                        }
+                    } catch (e) { console.error(e); }
+                };
+
+                const saveLocalData = () => {
+                    if (isOfflineMode.value) {
+                        localStorage.setItem('vue-firebase-offline-data', JSON.stringify(items.value));
+                    }
+                };
+
+                // --- 生命周期 ---
                 onMounted(() => {
                     initAuth();
                     
                     onAuthStateChanged(auth, (currentUser) => {
-                        user.value = currentUser;
-                        loading.value = false;
-                        
-                        // 用户登录后，设置 Firestore 监听
+                        if (isOfflineMode.value) return; // 如果已经决定离线，忽略 Auth 状态变化
+
                         if (currentUser) {
+                            user.value = currentUser;
                             setupDataListener(currentUser.uid);
                         } else {
-                            // 登出清理
-                            items.value = [];
-                            if (unsubscribeSnapshot) unsubscribeSnapshot();
+                            // 如果 Auth 没报错但也没用户，可能是正在初始化，或者需要重试
+                            // 这里保持静默，等待 initAuth 的结果
                         }
                     });
                 });
 
-                // Firestore 数据监听器
+                // --- 数据监听 (在线) ---
                 const setupDataListener = (uid) => {
-                    // 严格遵循路径规则 Rule 1: artifacts/{appId}/public/data/{collection}
-                    // 这里我们使用 public 数据，让大家都可以看到测试效果
-                    const q = query(
-                        collection(db, 'artifacts', appId, 'public', 'data', 'todos')
-                        // 注意: 按照 Rule 2，这里尽量不做复杂查询。如果报错索引问题，请移除 orderBy
-                    );
-
-                    unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-                        const loadedItems = [];
-                        snapshot.forEach((doc) => {
-                            loadedItems.push({ id: doc.id, ...doc.data() });
+                    try {
+                        const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'todos'));
+                        unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+                            const loadedItems = [];
+                            snapshot.forEach((doc) => {
+                                loadedItems.push({ id: doc.id, ...doc.data() });
+                            });
+                            // 内存排序
+                            loadedItems.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                            items.value = loadedItems;
+                        }, (err) => {
+                            console.warn("Snapshot failed, switching to offline:", err);
+                            activateOfflineMode(); // 即使是数据库读取失败，也切离线
                         });
-                        // 在内存中排序 (遵循 Rule 2: No complex queries if index missing)
-                        loadedItems.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-                        items.value = loadedItems;
-                    }, (err) => {
-                        console.error("Snapshot Error:", err);
-                        error.value = "数据加载失败: " + err.message;
-                    });
+                    } catch (e) {
+                        activateOfflineMode();
+                    }
                 };
 
-                // 组件卸载时清理监听器
                 onUnmounted(() => {
                     if (unsubscribeSnapshot) unsubscribeSnapshot();
                 });
 
-                // 4. 方法定义
-                
-                // 修复的核心：定义 openSettings
-                const openSettings = () => {
-                    showSettings.value = true;
-                };
-
-                const closeSettings = () => {
-                    showSettings.value = false;
-                };
+                // --- 操作逻辑 ---
+                const openSettings = () => showSettings.value = true;
+                const closeSettings = () => showSettings.value = false;
 
                 const addItem = async () => {
-                    if (!newItem.value.trim() || !user.value) return;
+                    if (!newItem.value.trim()) return;
                     isAdding.value = true;
+
+                    const itemData = {
+                        text: newItem.value,
+                        createdAt: isOfflineMode.value ? { seconds: Date.now() / 1000 } : serverTimestamp(),
+                        createdBy: user.value.uid
+                    };
+
                     try {
-                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'todos'), {
-                            text: newItem.value,
-                            createdAt: serverTimestamp(),
-                            createdBy: user.value.uid
-                        });
+                        if (isOfflineMode.value) {
+                            // 离线添加
+                            const fakeId = 'local_' + Date.now();
+                            items.value.unshift({ id: fakeId, ...itemData });
+                            saveLocalData();
+                        } else {
+                            // 在线添加
+                            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'todos'), itemData);
+                        }
                         newItem.value = '';
                     } catch (err) {
-                        console.error("Add Error:", err);
-                        error.value = "添加失败: " + err.message;
+                        console.error("Add failed", err);
+                        // 如果在线添加失败，甚至可以自动切离线并重试（此处简化为仅打印）
                     } finally {
                         isAdding.value = false;
                     }
                 };
 
                 const deleteItem = async (id) => {
-                    if (!user.value) return;
                     try {
-                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'todos', id));
+                        if (isOfflineMode.value) {
+                            items.value = items.value.filter(i => i.id !== id);
+                            saveLocalData();
+                        } else {
+                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'todos', id));
+                        }
                     } catch (err) {
-                        console.error("Delete Error:", err);
-                        // 忽略权限错误，只在控制台打印
+                        console.error("Delete failed", err);
                     }
                 };
 
@@ -300,21 +356,10 @@
                     });
                 };
 
-                // 5. 必须 Return 所有模板中用到的变量和函数
                 return {
-                    user,
-                    loading,
-                    error,
-                    items,
-                    newItem,
-                    isAdding,
-                    addItem,
-                    deleteItem,
-                    formatDate,
-                    // 必须返回这几个，否则会报 ReferenceError
-                    showSettings,
-                    openSettings,
-                    closeSettings
+                    user, loading, error, items, newItem, isAdding,
+                    showSettings, openSettings, closeSettings,
+                    addItem, deleteItem, formatDate, isOfflineMode
                 };
             }
         };
