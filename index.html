@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>提醒管家 (完美复活版)</title>
+    <title>提醒管家 (最终完美版)</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9'></path><path d='M13.73 21a2 2 0 0 1-3.46 0'></path></svg>">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,6 +18,24 @@
         .toggle-checkbox:checked + .toggle-label { background-color: #4f46e5; }
         /* 优化日期输入框在移动端的显示 */
         input[type="datetime-local"] { -webkit-appearance: none; }
+        /* 自定义 Select 下拉箭头样式辅助 */
+        .custom-select-wrapper { position: relative; }
+        .custom-select-wrapper::after {
+            content: '';
+            position: absolute;
+            right: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0.8rem;
+            height: 0.8rem;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            pointer-events: none;
+            transition: transform 0.2s;
+        }
+        .custom-select-wrapper:hover::after { transform: translateY(-30%); }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans">
@@ -29,7 +47,7 @@
         <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-md shadow-indigo-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9'></path><path d="M13.73 21a2 2 0 0 1-3.46 0'></path></svg>
                 </div>
                 <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">提醒管家</h1>
             </div>
@@ -161,7 +179,7 @@
                     <div class="space-y-1">
                         <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">提醒名称</label>
                         <div class="relative">
-                            <input v-model="form.name" placeholder="例如：还信用卡、吃药、开会" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-11 focus:bg-white focus:ring-2 ring-indigo-500/50 outline-none transition font-medium text-slate-800">
+                            <input v-model="form.name" placeholder="例如：还信用卡、吃药、开会" required class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 pl-11 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition font-medium text-slate-800 shadow-sm hover:border-indigo-300">
                             <div class="absolute left-3.5 top-3.5 text-slate-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                             </div>
@@ -169,30 +187,27 @@
                     </div>
                     
                     <div class="grid grid-cols-2 gap-5">
-                        <!-- 分类选择 -->
+                        <!-- 分类选择 (美化版) -->
                         <div class="space-y-1">
                             <label class="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
                                 分类 
                                 <span @click="showCatModal = true" class="text-indigo-600 hover:text-indigo-800 cursor-pointer transition hover:bg-indigo-50 px-2 py-0.5 rounded-md">+管理</span>
                             </label>
-                            <div class="relative">
-                                <select v-model="form.category_id" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 appearance-none focus:bg-white focus:ring-2 ring-indigo-500/50 outline-none transition text-slate-700">
+                            <div class="custom-select-wrapper">
+                                <select v-model="form.category_id" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 pl-10 appearance-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition text-slate-700 cursor-pointer shadow-sm hover:border-indigo-300">
                                     <option v-for="cat in categories" :value="cat.id">{{ cat.name }}</option>
                                 </select>
                                 <div class="absolute left-3.5 top-3.5 text-slate-400">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                                 </div>
-                                <div class="absolute right-3 top-3.5 text-slate-400 pointer-events-none">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                                </div>
                             </div>
                         </div>
 
-                        <!-- 频率选择 -->
+                        <!-- 频率选择 (美化版) -->
                         <div class="space-y-1">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">重复频率</label>
-                            <div class="relative">
-                                <select v-model="form.cycle" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 appearance-none focus:bg-white focus:ring-2 ring-indigo-500/50 outline-none transition text-slate-700">
+                            <div class="custom-select-wrapper">
+                                <select v-model="form.cycle" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 pl-10 appearance-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition text-slate-700 cursor-pointer shadow-sm hover:border-indigo-300">
                                     <option value="once">一次性</option>
                                     <option value="daily">每天</option>
                                     <option value="monthly">每月</option>
@@ -201,18 +216,15 @@
                                 <div class="absolute left-3.5 top-3.5 text-slate-400">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/></svg>
                                 </div>
-                                <div class="absolute right-3 top-3.5 text-slate-400 pointer-events-none">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 时间选择 (关键修改：datetime-local) -->
+                    <!-- 时间选择 -->
                     <div class="space-y-1">
                         <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">提醒时间</label>
                         <div class="relative">
-                            <input type="datetime-local" v-model="form.next_date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-11 focus:bg-white focus:ring-2 ring-indigo-500/50 outline-none transition text-slate-800 font-medium">
+                            <input type="datetime-local" v-model="form.next_date" required class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 pl-11 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition text-slate-800 font-medium shadow-sm hover:border-indigo-300">
                             <div class="absolute left-3.5 top-3.5 text-slate-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                             </div>
@@ -227,7 +239,7 @@
                     <div class="space-y-1">
                         <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">备注</label>
                         <div class="relative">
-                            <textarea v-model="form.notes" rows="2" placeholder="填写一些详情..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-11 resize-none focus:bg-white focus:ring-2 ring-indigo-500/50 outline-none transition text-slate-700"></textarea>
+                            <textarea v-model="form.notes" rows="2" placeholder="填写一些详情..." class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 pl-11 resize-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition text-slate-700 shadow-sm hover:border-indigo-300"></textarea>
                             <div class="absolute left-3.5 top-3.5 text-slate-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                             </div>
@@ -254,7 +266,7 @@
                 <div class="bg-slate-50 p-4 rounded-lg border space-y-4">
                     <div>
                         <label class="block text-sm font-bold mb-2 flex items-center gap-2">Bark Link (iOS)</label>
-                        <input v-model="settings.bark_url" placeholder="https://api.day.app/KEY/" class="w-full border rounded-lg px-3 py-2 text-sm">
+                        <input v-model="settings.bark_url" placeholder="https://api.day.app/KEY/" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 ring-indigo-500/50 outline-none">
                     </div>
                     <div class="flex items-center justify-between border-t border-slate-200 pt-4">
                         <div>
@@ -300,7 +312,7 @@
                 </div>
             </div>
             <div class="flex gap-2">
-                <input v-model="newCatName" placeholder="新分类名称" class="flex-1 border rounded-lg px-3 py-2 text-sm">
+                <input v-model="newCatName" placeholder="新分类名称" class="flex-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 ring-indigo-500/50 outline-none">
                 <button @click="addCategory" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm">添加</button>
             </div>
             <div class="mt-4 text-right">
@@ -347,7 +359,6 @@
             const showModal = ref(false);
             const showSettings = ref(false);
             const showCatModal = ref(false);
-            // 默认 cycle 改为一次性，更符合通用场景
             const form = ref({ id: null, name: '', cycle: 'once', next_date: '', category_id: '', notes: '' });
             const newCatName = ref('');
 
@@ -408,14 +419,30 @@
             });
 
             // --- 业务逻辑 ---
+            
+            // 通用 Bark 发送函数 (修复：保存时无提示的问题)
+            const sendBarkNotification = async (title, body) => {
+                if(!settings.value.bark_url) return;
+                
+                let url = settings.value.bark_url;
+                if(!url.endsWith('/')) url += '/';
+                const encTitle = encodeURIComponent(title);
+                const encBody = encodeURIComponent(body);
+                let finalUrl = `${url}${encTitle}/${encBody}?group=Reminders`;
+                if(settings.value.bark_critical) finalUrl += `&level=critical&sound=gotosleep`;
 
-            // 获取默认时间字符串 (当前时间后一小时)
+                try {
+                    await fetch(finalUrl, { mode: 'no-cors' }); 
+                    console.log("Bark notification sent");
+                } catch(e) {
+                    console.error("Bark send failed", e);
+                }
+            };
+
             const getDefaultDateTime = () => {
                 const now = new Date();
                 now.setHours(now.getHours() + 1);
-                now.setMinutes(0); // 取整
-                // 格式化为 YYYY-MM-DDTHH:mm 以适应 datetime-local
-                // 注意：需要处理时区偏差
+                now.setMinutes(0);
                 const offset = now.getTimezoneOffset() * 60000;
                 const localISOTime = (new Date(now - offset)).toISOString().slice(0, 16);
                 return localISOTime;
@@ -423,23 +450,19 @@
 
             const getDaysRemaining = (dateStr) => {
                 const today = new Date();
-                today.setHours(0,0,0,0); // 只比较日期
-                const target = new Date(dateStr); // 日期时间字符串也可以解析
+                today.setHours(0,0,0,0);
+                const target = new Date(dateStr);
                 target.setHours(0,0,0,0);
                 return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
             };
 
             const formatDateTime = (dateStr) => {
                 if (!dateStr) return '';
-                // 兼容旧数据的纯日期格式
                 const date = new Date(dateStr);
                 const month = (date.getMonth() + 1).toString().padStart(2, '0');
                 const day = date.getDate().toString().padStart(2, '0');
                 const hour = date.getHours().toString().padStart(2, '0');
                 const minute = date.getMinutes().toString().padStart(2, '0');
-                
-                // 如果是旧数据（没有时间部分，或者时间是 08:00/00:00），可能需要特殊显示
-                // 这里统一显示 MM-DD HH:mm
                 return `${month}-${day} ${hour}:${minute}`;
             };
 
@@ -492,7 +515,7 @@
             const openAddModal = () => {
                 form.value = { 
                     id: null, name: '', cycle: 'once', 
-                    next_date: getDefaultDateTime(), // 默认当前时间
+                    next_date: getDefaultDateTime(),
                     category_id: categories.value[0]?.id || '', 
                     notes: '' 
                 };
@@ -504,10 +527,9 @@
             };
             
             const editItem = (item) => {
-                // 处理旧数据的兼容性：如果是 YYYY-MM-DD，补全为 YYYY-MM-DDTHH:mm
                 let nextDate = item.next_date;
                 if (nextDate && !nextDate.includes('T')) {
-                    nextDate += 'T09:00'; // 默认上午9点
+                    nextDate += 'T09:00';
                 }
                 form.value = { ...item, next_date: nextDate };
                 showModal.value = true;
@@ -519,11 +541,18 @@
                 delete data.id; 
 
                 try {
+                    let notificationTitle = "提醒设置成功";
                     if (form.value.id) {
                         await updateDoc(getDocRef("reminders", form.value.id), data);
+                        notificationTitle = "提醒已更新";
                     } else {
                         await addDoc(getColl("reminders"), data);
+                        notificationTitle = "新提醒已添加";
                     }
+                    
+                    // 保存成功后，主动触发一次 Bark 通知
+                    sendBarkNotification(notificationTitle, `${form.value.name} - ${formatDateTime(form.value.next_date)}`);
+
                     await loadData();
                     showModal.value = false;
                 } catch(e) { console.error(e); alert("保存失败: " + e.message); }
@@ -570,22 +599,9 @@
 
             const testBark = async () => {
                 if(!settings.value.bark_url) return alert("请先填写 Bark URL");
-                let url = settings.value.bark_url;
-                if(!url.endsWith('/')) url += '/';
-                const title = encodeURIComponent("提醒管家测试");
-                const body = encodeURIComponent("这是一条测试消息");
-                let finalUrl = `${url}${title}/${body}?group=Reminders`;
-                
-                // 关键修改：强提醒铃声改为 gotosleep
-                if(settings.value.bark_critical) finalUrl += `&level=critical&sound=gotosleep`;
-
-                try {
-                    await fetch(finalUrl, { mode: 'no-cors' }); 
-                    alert("请求已发送 (如未收到请检查 Bark 设置)");
-                } catch(e) {
-                    console.error(e);
-                    alert("发送请求尝试失败");
-                }
+                // 复用封装好的函数
+                await sendBarkNotification("提醒管家测试", "这是一条测试消息");
+                alert("请求已发送 (如未收到请检查 Bark 设置)");
             };
 
             return {
