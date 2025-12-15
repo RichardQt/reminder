@@ -1,370 +1,515 @@
 <!DOCTYPE html>
-<html lang="zh-CN" translate="no">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="google" content="notranslate">
-    <title>Firebase 应用 (安全模式)</title>
+    <title>提醒管家 (每天提醒版)</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9'></path><path d='M13.73 21a2 2 0 0 1-3.46 0'></path></svg>">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans SC', sans-serif; }
+        [v-cloak] { display: none; }
         .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
         .fade-enter-from, .fade-leave-to { opacity: 0; }
-        /* 防止加载时的闪烁 */
-        [v-cloak] { display: none; }
+        .toggle-checkbox:checked { right: 0; border-color: #4f46e5; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #4f46e5; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
-    <div id="app" v-cloak class="min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-900 font-sans">
+
+<div id="app" v-cloak class="min-h-screen pb-20">
+    
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-30">
+        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                </div>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">提醒管家</h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <div v-if="!user" class="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">连接中...</div>
+                <button @click="openSettings" class="text-slate-400 hover:text-indigo-600 transition p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-8 space-y-8">
         
-        <!-- 导航栏 -->
-        <nav class="bg-white shadow-sm sticky top-0 z-50">
-            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex items-center">
-                        <span class="text-xl font-bold text-blue-600">我的应用</span>
-                        <span v-if="isOfflineMode" class="ml-2 px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
-                            本地模式
-                        </span>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <div v-if="loading" class="text-sm text-gray-500 animate-pulse">连接中...</div>
-                        <div v-else class="flex items-center space-x-2">
-                            <!-- 状态指示灯 -->
-                            <span v-if="!isOfflineMode" class="flex h-3 w-3 relative">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                            </span>
-                            <span v-else class="flex h-3 w-3 relative">
-                                <span class="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
-                            </span>
-                            
-                            <!-- 设置按钮 -->
-                            <button @click="openSettings" class="p-2 rounded-full text-gray-500 hover:bg-gray-100 focus:outline-none transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
+        <!-- Loading -->
+        <div v-if="loading" class="text-center py-20">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+            <p class="text-slate-400 mt-4 text-sm">正在同步云端数据...</p>
+        </div>
+
+        <template v-else>
+            <!-- Stats -->
+            <div class="grid grid-cols-3 gap-3 md:gap-4">
+                <div class="p-4 rounded-2xl bg-indigo-50 border border-indigo-100 text-center">
+                    <p class="text-indigo-600 text-xs font-bold uppercase tracking-wider mb-1">全部事项</p>
+                    <h3 class="text-2xl font-bold text-indigo-900">{{ items.length }}</h3>
+                </div>
+                <div class="p-4 rounded-2xl bg-white border border-slate-200 text-center shadow-sm">
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">7天内提醒</p>
+                    <h3 class="text-2xl font-bold text-slate-900">{{ stats.upcomingCount }}</h3>
+                </div>
+                <div :class="['p-4 rounded-2xl border text-center shadow-sm', stats.overdueCount > 0 ? 'bg-rose-50 border-rose-200' : 'bg-white border-slate-200']">
+                    <p :class="['text-xs font-bold uppercase tracking-wider mb-1', stats.overdueCount > 0 ? 'text-rose-600' : 'text-slate-500']">已过期</p>
+                    <h3 :class="['text-2xl font-bold', stats.overdueCount > 0 ? 'text-rose-700' : 'text-slate-900']">{{ stats.overdueCount }}</h3>
                 </div>
             </div>
-        </nav>
 
-        <!-- 主内容区域 -->
-        <main class="flex-grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+            <!-- List Header -->
+            <div class="flex justify-between items-center pt-2">
+                <h2 class="text-xl font-bold flex items-center gap-2">
+                    提醒列表
+                </h2>
+                <button @click="openAddModal" class="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg shadow-indigo-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>新建</span>
+                </button>
+            </div>
+
+            <!-- List -->
+            <div v-if="items.length === 0" class="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-300">
+                <p class="text-slate-500">云端数据库为空，点击右上角添加。</p>
+            </div>
             
-            <!-- 即使出错也只显示温和的提示，而不是红色报错 -->
-            <div v-if="isOfflineMode" class="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded shadow-sm">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm text-yellow-700">
-                            <strong>当前为本地演示模式</strong><br>
-                            Firebase 验证服务未开启。为了保证您能正常使用，已自动切换到本地存储。您添加的数据将保存在此浏览器中。
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <div v-if="loading" class="flex justify-center items-center py-20">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-            </div>
-
-            <!-- 应用功能区域 -->
-            <div v-else class="space-y-6">
-                
-                <!-- 输入框 -->
-                <div class="bg-white shadow rounded-lg p-6">
-                    <h2 class="text-lg font-medium text-gray-900 mb-4">添加新项目</h2>
-                    <div class="flex gap-4">
-                        <input 
-                            v-model="newItem" 
-                            @keyup.enter="addItem"
-                            type="text" 
-                            placeholder="输入内容并回车..." 
-                            class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
-                        >
-                        <button 
-                            @click="addItem" 
-                            :disabled="!newItem.trim() || isAdding"
-                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <span v-if="isAdding">处理中...</span>
-                            <span v-else>添加</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 列表展示 -->
-                <div class="bg-white shadow rounded-lg overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                        <h3 class="text-lg font-medium text-gray-900">数据列表</h3>
-                        <span class="text-xs text-gray-500">
-                            {{ isOfflineMode ? '本地存储' : '云端同步' }}
-                        </span>
-                    </div>
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div v-for="item in sortedItems" :key="item.id" class="group relative bg-white rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all">
+                    <!-- Color Bar -->
+                    <div :class="['absolute left-0 top-4 bottom-4 w-1 rounded-r-full', getStatusColor(item.next_date)]"></div>
                     
-                    <ul v-if="items.length > 0" class="divide-y divide-gray-200">
-                        <li v-for="item in items" :key="item.id" class="px-6 py-4 hover:bg-gray-50 transition flex justify-between items-center group">
-                            <span class="text-gray-700">{{ item.text }}</span>
-                            <div class="flex items-center space-x-2 text-xs text-gray-400">
-                                <span>{{ formatDate(item.createdAt) }}</span>
-                                <button @click="deleteItem(item.id)" class="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition p-1">
-                                    删除
-                                </button>
-                            </div>
-                        </li>
-                    </ul>
-                    <div v-else class="px-6 py-12 text-center text-gray-500">
-                        <p>暂无数据，尝试添加一条？</p>
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <!-- 设置模态框 -->
-        <transition name="fade">
-            <div v-if="showSettings" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-                <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeSettings" aria-hidden="true"></div>
-                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                    <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                            <div class="sm:flex sm:items-start">
-                                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                                    <svg class="h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
+                    <div class="pl-3">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex items-center gap-3 w-full">
+                                <div :class="['p-2.5 rounded-lg flex-shrink-0', 'bg-slate-100 text-' + getCatColor(item.category_id) + '-500']">
+                                    <span class="font-bold text-lg uppercase block w-6 h-6 text-center leading-6">{{ item.name.substring(0,1) }}</span>
                                 </div>
-                                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                        应用状态
-                                    </h3>
-                                    <div class="mt-2">
-                                        <p class="text-sm text-gray-500 mb-2">
-                                            当前连接模式: <span :class="isOfflineMode ? 'text-yellow-600 font-bold' : 'text-green-600 font-bold'">{{ isOfflineMode ? '本地离线' : '云端在线' }}</span>
-                                        </p>
-                                        
-                                        <div v-if="isOfflineMode" class="bg-yellow-50 p-3 rounded text-xs text-yellow-800 mb-3 border border-yellow-200">
-                                            <strong>为什么是离线模式？</strong><br>
-                                            Firebase 后台未开启 Auth。如果我是开发者，我需要去 Firebase Console > Authentication > Sign-in method 开启 "Anonymous" (匿名) 登录。
-                                        </div>
-
-                                        <div class="bg-gray-100 p-3 rounded text-xs text-gray-600 break-all font-mono">
-                                            User ID: {{ user ? user.uid : 'Guest' }}
-                                        </div>
+                                <div class="min-w-0 flex-1">
+                                    <h3 class="font-bold text-slate-900 truncate text-lg">{{ item.name }}</h3>
+                                    <div class="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                        <span :class="'w-2 h-2 rounded-full bg-' + getCatColor(item.category_id) + '-500'"></span>
+                                        {{ getCatName(item.category_id) }}
+                                        <span class="text-slate-300">|</span> 
+                                        <!-- 显示周期：处理每天逻辑 -->
+                                        {{ getCycleText(item.cycle) }}
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                            <button @click="closeSettings" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
-                                确定
-                            </button>
+
+                        <div v-if="item.notes" class="text-xs text-slate-400 mt-2 line-clamp-1">
+                            {{ item.notes }}
+                        </div>
+
+                        <div class="flex items-center justify-between text-sm mt-4 pt-4 border-t border-slate-100">
+                            <div class="flex flex-col">
+                                <span class="text-xs text-slate-400 mb-0.5">目标: {{ item.next_date }}</span>
+                                <span :class="['font-bold flex items-center gap-1 text-base', getStatusTextColor(item.next_date)]">
+                                    {{ getDaysText(item.next_date) }}
+                                </span>
+                            </div>
+                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button @click="editItem(item)" class="p-2 hover:bg-slate-100 rounded-full text-slate-500 hover:text-indigo-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/></svg>
+                                </button>
+                                <button @click="deleteItem(item.id)" class="p-2 hover:bg-slate-100 rounded-full text-slate-500 hover:text-red-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </transition>
+        </template>
+    </main>
+
+    <!-- Modal: Add/Edit -->
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden p-6">
+            <h3 class="text-lg font-bold mb-4">{{ form.id ? '编辑提醒' : '添加提醒' }}</h3>
+            <form @submit.prevent="saveItem" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">名称</label>
+                    <input v-model="form.name" placeholder="例如：每日打卡、还信用卡" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 ring-indigo-500 outline-none">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">
+                            分类 
+                            <span @click="showCatModal = true" class="text-indigo-600 text-xs float-right cursor-pointer hover:underline">+管理</span>
+                        </label>
+                        <select v-model="form.category_id" class="w-full border rounded-lg px-3 py-2 bg-white">
+                            <option v-for="cat in categories" :value="cat.id">{{ cat.name }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">重复频率</label>
+                        <select v-model="form.cycle" class="w-full border rounded-lg px-3 py-2 bg-white">
+                            <option value="daily">每天重复</option> <!-- 新增选项 -->
+                            <option value="monthly">每月重复</option>
+                            <option value="yearly">每年重复</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">下次提醒日期</label>
+                    <input type="date" v-model="form.next_date" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 ring-indigo-500 outline-none">
+                    <p v-if="form.cycle === 'daily'" class="text-xs text-indigo-500 mt-1">每天重复的项目建议日期选今天或明天</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">备注</label>
+                    <textarea v-model="form.notes" rows="3" class="w-full border rounded-lg px-3 py-2 resize-none focus:ring-2 ring-indigo-500 outline-none"></textarea>
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button type="button" @click="showModal = false" class="flex-1 border py-2.5 rounded-lg hover:bg-slate-50 font-medium">取消</button>
+                    <button type="submit" class="flex-1 bg-indigo-600 text-white py-2.5 rounded-lg hover:bg-indigo-700 font-medium">保存</button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <!-- Vue & Firebase Scripts -->
-    <script type="module">
-        import { createApp, ref, onMounted, onUnmounted, watch } from 'https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.esm-browser.js';
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, serverTimestamp, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+    <!-- Modal: Settings -->
+    <div v-if="showSettings" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden p-6">
+            <h3 class="text-lg font-bold mb-4">系统设置</h3>
+            <div class="space-y-4">
+                <div class="bg-slate-50 p-4 rounded-lg border space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold mb-2 flex items-center gap-2">Bark Link (iOS)</label>
+                        <input v-model="settings.bark_url" placeholder="https://api.day.app/KEY/" class="w-full border rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div class="flex items-center justify-between border-t border-slate-200 pt-4">
+                        <div>
+                            <span class="block text-sm font-bold text-slate-900">强力提醒</span>
+                            <span class="block text-xs text-slate-500">静音下也能收到通知</span>
+                        </div>
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" id="toggle" v-model="settings.bark_critical" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300 transition-all duration-300"/>
+                            <label for="toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"></label>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 pt-2">
+                        <button @click="saveSettings" class="flex-1 bg-slate-900 text-white py-1.5 rounded text-sm hover:bg-slate-800">保存设置</button>
+                        <button @click="testBark" class="px-3 border border-slate-300 rounded text-sm hover:bg-slate-50">测试</button>
+                    </div>
+                </div>
+                
+                <div v-if="user" class="text-xs text-slate-400 text-center">
+                    当前用户ID: {{ user.uid.substring(0,8) }}...
+                </div>
+                
+                <div class="text-right">
+                    <button @click="showSettings = false" class="text-sm text-slate-500 hover:text-slate-800">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        // 1. 初始化 Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyBH-gppdK7y6hFQs_LyNfs9apjfl5OWfoA",
-            authDomain: "my-project-447004.firebaseapp.com",
-            projectId: "my-project-447004",
-            storageBucket: "my-project-447004.firebasestorage.app",
-            messagingSenderId: "54145808805",
-            appId: "1:54145808805:web:bfd1e41739612e5183d04c"
-        };
+    <!-- Modal: Categories -->
+    <div v-if="showCatModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden p-6">
+            <h3 class="text-lg font-bold mb-4">管理分类</h3>
+            <div class="max-h-60 overflow-y-auto mb-4 border rounded-lg divide-y">
+                <div v-for="cat in categories" :key="cat.id" class="p-3 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <div :class="['w-3 h-3 rounded-full', 'bg-'+cat.color+'-500']"></div>
+                        <span>{{ cat.name }}</span>
+                    </div>
+                    <button v-if="!cat.is_system" @click="deleteCategory(cat.id)" class="text-red-500 hover:text-red-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                    <span v-else class="text-xs text-slate-400">系统</span>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <input v-model="newCatName" placeholder="新分类名称" class="flex-1 border rounded-lg px-3 py-2 text-sm">
+                <button @click="addCategory" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm">添加</button>
+            </div>
+            <div class="mt-4 text-right">
+                <button @click="showCatModal = false" class="text-sm text-slate-500 hover:text-slate-800">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+<!-- Scripts -->
+<script type="module">
+    // 使用 ESM 模块导入，兼容性更好
+    import { createApp, ref, computed, onMounted } from 'https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.esm-browser.js';
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+    import { getFirestore, collection, addDoc, query, getDocs, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-        const VueApp = {
-            setup() {
-                const user = ref(null);
-                const loading = ref(true);
-                const error = ref(null); // 虽然有这个变量，但我们不让它在界面上显示红框
-                const items = ref([]);
-                const newItem = ref('');
-                const isAdding = ref(false);
-                const showSettings = ref(false);
-                const isOfflineMode = ref(false);
+    // 1. Firebase 配置 (已替换为你提供的真实配置)
+    const firebaseConfig = {
+        apiKey: "AIzaSyBH-gppdK7y6hFQs_LyNfs9apjfl5OWfoA",
+        authDomain: "my-project-447004.firebaseapp.com",
+        projectId: "my-project-447004",
+        storageBucket: "my-project-447004.firebasestorage.app",
+        messagingSenderId: "54145808805",
+        appId: "1:54145808805:web:bfd1e41739612e5183d04c"
+    };
 
-                let unsubscribeSnapshot = null;
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    // 使用环境提供的 appId 隔离数据，防止多人冲突
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-                // --- 核心修改：安全登录逻辑 ---
-                const initAuth = async () => {
-                    try {
-                        loading.value = true;
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            // 尝试匿名登录
-                            await signInAnonymously(auth);
+    // 辅助函数：生成安全的 Collection 引用
+    // 规则：artifacts/{appId}/public/data/{collectionName}
+    const getColl = (name) => collection(db, 'artifacts', appId, 'public', 'data', name);
+    const getDocRef = (name, id) => doc(db, 'artifacts', appId, 'public', 'data', name, id);
+
+    createApp({
+        setup() {
+            const user = ref(null);
+            const loading = ref(true);
+            const items = ref([]);
+            const categories = ref([]);
+            const settings = ref({ bark_url: '', bark_critical: false });
+            
+            const showModal = ref(false);
+            const showSettings = ref(false);
+            const showCatModal = ref(false);
+            // 默认 cycle 为 'daily' 或 'monthly'
+            const form = ref({ id: null, name: '', cycle: 'daily', next_date: '', category_id: '', notes: '' });
+            const newCatName = ref('');
+
+            const defaultCategories = [
+                { id: 'cat_default', name: '默认', color: 'indigo', is_system: true },
+                { id: 'cat_finance', name: '财务', color: 'blue', is_system: true },
+                { id: 'cat_life', name: '生活', color: 'green', is_system: true }
+            ];
+
+            // --- 认证与加载逻辑 ---
+            const initAuth = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (err) {
+                    console.error("Login failed:", err);
+                    // 即使登录失败（如后台未开启匿名），我们也让页面显示，避免白屏
+                    loading.value = false;
+                }
+            };
+
+            const loadData = async () => {
+                if (!user.value) return; // 等待用户登录
+                try {
+                    // 加载提醒
+                    const querySnapshot = await getDocs(getColl("reminders"));
+                    items.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                    // 加载分类
+                    const catSnapshot = await getDocs(getColl("categories"));
+                    if (catSnapshot.empty) {
+                        categories.value = defaultCategories;
+                        // 初始化默认分类写入数据库
+                        for (const cat of defaultCategories) {
+                            // 注意：由于是首次写入，我们用 addDoc 或者 setDoc
+                            // 这里简化处理，用户添加新分类时再写入
                         }
-                    } catch (err) {
-                        console.warn("Firebase Auth Error caught:", err.code);
-                        // 如果是配置错误（没开 Auth），直接切到离线模式，不抛出异常
-                        if (err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed' || err.code === 'auth/internal-error') {
-                            activateOfflineMode();
-                        } else {
-                            // 其他网络错误也尝试离线模式，保证可用性
-                            activateOfflineMode();
-                        }
-                    } finally {
+                    } else {
+                        categories.value = catSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    }
+
+                    // 加载设置
+                    const settingsSnap = await getDocs(getColl("settings"));
+                    if (!settingsSnap.empty) {
+                        const data = settingsSnap.docs[0].data();
+                        settings.value = { ...data, id: settingsSnap.docs[0].id };
+                    }
+                } catch (e) {
+                    console.error("Data load error:", e);
+                } finally {
+                    loading.value = false;
+                }
+            };
+
+            onMounted(() => {
+                initAuth();
+                onAuthStateChanged(auth, (currentUser) => {
+                    user.value = currentUser;
+                    if (currentUser) {
+                        loadData();
+                    } else {
                         loading.value = false;
                     }
-                };
-
-                // --- 离线模式逻辑 ---
-                const activateOfflineMode = () => {
-                    console.log("Activating Offline Mode");
-                    isOfflineMode.value = true;
-                    // 模拟一个用户
-                    user.value = { uid: 'offline-guest', isAnonymous: true };
-                    // 加载本地数据
-                    loadLocalData();
-                };
-
-                const loadLocalData = () => {
-                    try {
-                        const local = localStorage.getItem('vue-firebase-offline-data');
-                        if (local) {
-                            items.value = JSON.parse(local);
-                        }
-                    } catch (e) { console.error(e); }
-                };
-
-                const saveLocalData = () => {
-                    if (isOfflineMode.value) {
-                        localStorage.setItem('vue-firebase-offline-data', JSON.stringify(items.value));
-                    }
-                };
-
-                // --- 生命周期 ---
-                onMounted(() => {
-                    initAuth();
-                    
-                    onAuthStateChanged(auth, (currentUser) => {
-                        if (isOfflineMode.value) return; // 如果已经决定离线，忽略 Auth 状态变化
-
-                        if (currentUser) {
-                            user.value = currentUser;
-                            setupDataListener(currentUser.uid);
-                        } else {
-                            // 如果 Auth 没报错但也没用户，可能是正在初始化，或者需要重试
-                            // 这里保持静默，等待 initAuth 的结果
-                        }
-                    });
                 });
+            });
 
-                // --- 数据监听 (在线) ---
-                const setupDataListener = (uid) => {
-                    try {
-                        const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'todos'));
-                        unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-                            const loadedItems = [];
-                            snapshot.forEach((doc) => {
-                                loadedItems.push({ id: doc.id, ...doc.data() });
-                            });
-                            // 内存排序
-                            loadedItems.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-                            items.value = loadedItems;
-                        }, (err) => {
-                            console.warn("Snapshot failed, switching to offline:", err);
-                            activateOfflineMode(); // 即使是数据库读取失败，也切离线
-                        });
-                    } catch (e) {
-                        activateOfflineMode();
-                    }
-                };
+            // --- 业务逻辑 ---
 
-                onUnmounted(() => {
-                    if (unsubscribeSnapshot) unsubscribeSnapshot();
+            const getDaysRemaining = (dateStr) => {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const target = new Date(dateStr);
+                target.setHours(0,0,0,0);
+                return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+            };
+
+            const sortedItems = computed(() => {
+                return [...items.value].sort((a, b) => getDaysRemaining(a.next_date) - getDaysRemaining(b.next_date));
+            });
+
+            const stats = computed(() => {
+                let upcoming = 0, overdue = 0;
+                items.value.forEach(item => {
+                    let d = getDaysRemaining(item.next_date);
+                    if(d < 0) overdue++;
+                    else if(d <= 7) upcoming++;
                 });
+                return { upcomingCount: upcoming, overdueCount: overdue };
+            });
 
-                // --- 操作逻辑 ---
-                const openSettings = () => showSettings.value = true;
-                const closeSettings = () => showSettings.value = false;
+            const getStatusColor = (d) => {
+                const days = getDaysRemaining(d);
+                if(days < 0) return 'bg-red-500';
+                if(days <= 1) return 'bg-orange-400'; // 更加紧迫
+                if(days <= 7) return 'bg-yellow-400';
+                return 'bg-emerald-400';
+            };
+            const getStatusTextColor = (d) => {
+                const days = getDaysRemaining(d);
+                if(days < 0) return 'text-red-500';
+                if(days <= 1) return 'text-orange-500';
+                return 'text-slate-500';
+            };
+            const getDaysText = (d) => {
+                const days = getDaysRemaining(d);
+                if(days < 0) return `已过期 ${Math.abs(days)} 天`;
+                if(days === 0) return '今天';
+                if(days === 1) return '明天';
+                return `${days} 天后`;
+            };
+            
+            const getCatName = (id) => categories.value.find(c => c.id === id)?.name || '未知';
+            const getCatColor = (id) => categories.value.find(c => c.id === id)?.color || 'gray';
+            
+            const getCycleText = (cycle) => {
+                if (cycle === 'daily') return '每天';
+                if (cycle === 'monthly') return '每月';
+                if (cycle === 'yearly') return '每年';
+                return '一次性';
+            };
 
-                const addItem = async () => {
-                    if (!newItem.value.trim()) return;
-                    isAdding.value = true;
+            // --- CRUD ---
+            const openAddModal = () => {
+                form.value = { 
+                    id: null, name: '', cycle: 'monthly', 
+                    next_date: new Date().toISOString().split('T')[0], 
+                    category_id: categories.value[0]?.id || '', 
+                    notes: '' 
+                };
+                showModal.value = true;
+            };
+            
+            const editItem = (item) => {
+                form.value = { ...item };
+                showModal.value = true;
+            };
 
-                    const itemData = {
-                        text: newItem.value,
-                        createdAt: isOfflineMode.value ? { seconds: Date.now() / 1000 } : serverTimestamp(),
-                        createdBy: user.value.uid
-                    };
+            const saveItem = async () => {
+                if (!user.value) return alert("请等待登录完成");
+                const data = { ...form.value };
+                delete data.id; 
 
-                    try {
-                        if (isOfflineMode.value) {
-                            // 离线添加
-                            const fakeId = 'local_' + Date.now();
-                            items.value.unshift({ id: fakeId, ...itemData });
-                            saveLocalData();
-                        } else {
-                            // 在线添加
-                            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'todos'), itemData);
-                        }
-                        newItem.value = '';
-                    } catch (err) {
-                        console.error("Add failed", err);
-                        // 如果在线添加失败，甚至可以自动切离线并重试（此处简化为仅打印）
-                    } finally {
-                        isAdding.value = false;
+                try {
+                    if (form.value.id) {
+                        await updateDoc(getDocRef("reminders", form.value.id), data);
+                    } else {
+                        await addDoc(getColl("reminders"), data);
                     }
-                };
+                    await loadData();
+                    showModal.value = false;
+                } catch(e) { console.error(e); alert("保存失败: " + e.message); }
+            };
 
-                const deleteItem = async (id) => {
-                    try {
-                        if (isOfflineMode.value) {
-                            items.value = items.value.filter(i => i.id !== id);
-                            saveLocalData();
-                        } else {
-                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'todos', id));
-                        }
-                    } catch (err) {
-                        console.error("Delete failed", err);
+            const deleteItem = async (id) => {
+                if(!confirm('确定删除?')) return;
+                try {
+                    await deleteDoc(getDocRef("reminders", id));
+                    await loadData();
+                } catch(e) { console.error(e); }
+            };
+
+            const addCategory = async () => {
+                if(!newCatName.value) return;
+                try {
+                    const newCat = { name: newCatName.value, color: 'gray', is_system: false };
+                    await addDoc(getColl("categories"), newCat);
+                    newCatName.value = '';
+                    await loadData();
+                } catch(e) { console.error(e); }
+            };
+            
+            const deleteCategory = async (id) => {
+                if(!confirm('确定删除?')) return;
+                try {
+                    await deleteDoc(getDocRef("categories", id));
+                    await loadData();
+                } catch(e) { console.error(e); }
+            };
+
+            const saveSettings = async () => {
+                if (!user.value) return;
+                const data = { bark_url: settings.value.bark_url, bark_critical: settings.value.bark_critical };
+                try {
+                    if (settings.value.id) {
+                        await updateDoc(getDocRef("settings", settings.value.id), data);
+                    } else {
+                        await addDoc(getColl("settings"), data);
                     }
-                };
+                    alert("配置已保存");
+                } catch(e) { console.error(e); }
+            };
 
-                const formatDate = (timestamp) => {
-                    if (!timestamp) return '';
-                    return new Date(timestamp.seconds * 1000).toLocaleString('zh-CN', {
-                        hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric'
-                    });
-                };
+            const testBark = async () => {
+                if(!settings.value.bark_url) return alert("请先填写 Bark URL");
+                let url = settings.value.bark_url;
+                if(!url.endsWith('/')) url += '/';
+                const title = encodeURIComponent("提醒管家测试");
+                const body = encodeURIComponent("这是一条测试消息");
+                let finalUrl = `${url}${title}/${body}?group=Reminders`;
+                if(settings.value.bark_critical) finalUrl += `&level=critical&sound=minuet`;
 
-                return {
-                    user, loading, error, items, newItem, isAdding,
-                    showSettings, openSettings, closeSettings,
-                    addItem, deleteItem, formatDate, isOfflineMode
-                };
-            }
-        };
+                try {
+                    // 注意：由于跨域，浏览器直接 fetch 可能会报错，但这通常不影响 Bark 接收通知
+                    // 最好在服务端做这个，或者忽略 CORS 错误
+                    await fetch(finalUrl, { mode: 'no-cors' }); 
+                    alert("请求已发送 (CORS限制可能导致无响应，请查看手机)");
+                } catch(e) {
+                    console.error(e);
+                    alert("发送请求尝试失败");
+                }
+            };
 
-        createApp(VueApp).mount('#app');
-    </script>
+            return {
+                user, loading, items, sortedItems, stats, categories, settings,
+                showModal, showSettings, showCatModal, form, newCatName,
+                getStatusColor, getStatusTextColor, getDaysText, getCatName, getCatColor, getCycleText,
+                openAddModal, editItem, saveItem, deleteItem,
+                addCategory, deleteCategory,
+                openSettings, saveSettings, testBark
+            };
+        }
+    }).mount('#app');
+</script>
 </body>
 </html>
