@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>提醒管家 (完美UI版)</title>
+    <title>提醒管家 (自动提醒版)</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9'></path><path d='M13.73 21a2 2 0 0 1-3.46 0'></path></svg>">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -34,11 +34,15 @@
                 <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">提醒管家</h1>
             </div>
             <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1 text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span>监控中</span>
+                </div>
                 <div v-if="!user" class="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-100 flex items-center gap-1">
                     <div class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div> 连接中...
                 </div>
                 <button @click="openSettings" class="text-slate-400 hover:text-indigo-600 transition p-2 rounded-full hover:bg-slate-50">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1-1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
             </div>
         </div>
@@ -340,7 +344,7 @@
 
 <!-- Scripts -->
 <script type="module">
-    import { createApp, ref, computed, onMounted, reactive } from 'https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.esm-browser.js';
+    import { createApp, ref, computed, onMounted, onUnmounted, reactive } from 'https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.esm-browser.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
     import { getFirestore, collection, addDoc, query, getDocs, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
@@ -380,6 +384,10 @@
             // 自定义下拉框状态
             const dropdownStates = reactive({ cat: false, cycle: false });
 
+            // 防止同一分钟重复提醒
+            const notifiedMap = ref(new Set());
+            let reminderInterval = null;
+
             const cycleOptions = [
                 { label: '一次性', val: 'once' },
                 { label: '每天', val: 'daily' },
@@ -393,7 +401,6 @@
                 { id: 'cat_life', name: '生活', color: 'green', is_system: true }
             ];
 
-            // 认证与数据加载
             const initAuth = async () => {
                 try {
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -432,21 +439,60 @@
                 }
             };
 
+            // 核心功能：定时检查逻辑
+            const startReminderCheck = () => {
+                // 每 10 秒检查一次
+                reminderInterval = setInterval(() => {
+                    if (!items.value.length || !settings.value.bark_url) return;
+
+                    const now = new Date();
+                    // 格式化为 YYYY-MM-DDTHH:mm
+                    const offset = now.getTimezoneOffset() * 60000;
+                    const currentIso = (new Date(now - offset)).toISOString().slice(0, 16);
+
+                    items.value.forEach(item => {
+                        if (!item.next_date) return;
+                        
+                        // 检查时间是否匹配 (精确到分)
+                        if (item.next_date === currentIso) {
+                            // 唯一标识：ID + 时间字符串，防止这 1 分钟内重复发
+                            const uniqueKey = `${item.id}_${currentIso}`;
+                            
+                            if (!notifiedMap.value.has(uniqueKey)) {
+                                // 触发提醒！使用 'alarm' 强提醒模式
+                                sendBarkNotification("时间到了！", `${item.name} - 该去完成了`, 'alarm');
+                                
+                                // 记录已发送
+                                notifiedMap.value.add(uniqueKey);
+
+                                // (可选) 清理 Set，防止无限膨胀，保留最近的即可，这里简单处理不清理也没事，页面刷新就清空了
+                            }
+                        }
+                    });
+                }, 10000); // 10秒检查一次
+            };
+
             onMounted(() => {
                 initAuth();
                 onAuthStateChanged(auth, (currentUser) => {
                     user.value = currentUser;
                     if (currentUser) {
-                        loadData();
+                        loadData().then(() => {
+                            startReminderCheck(); // 数据加载完后启动检查
+                        });
                     } else {
                         loading.value = false;
                     }
                 });
             });
 
-            // --- 下拉框交互 ---
+            onUnmounted(() => {
+                if (reminderInterval) clearInterval(reminderInterval);
+            });
+
+            // ... (下拉框交互代码保持不变) ...
             const toggleCatDropdown = () => {
-                dropdownStates.cycle = false; // 互斥
+                dropdownStates.cycle = false;
                 dropdownStates.cat = !dropdownStates.cat;
             };
             const toggleCycleDropdown = () => {
@@ -462,38 +508,30 @@
                 dropdownStates.cycle = false;
             };
             const handleGlobalClick = (e) => {
-                // 点击空白处关闭下拉框
                 dropdownStates.cat = false;
                 dropdownStates.cycle = false;
             };
 
-            // --- Bark 逻辑 (核心修改) ---
+            // ... (Bark 逻辑保持不变) ...
             const sendBarkNotification = async (title, body, soundMode = 'default') => {
                 if(!settings.value.bark_url) return;
-                
                 let url = settings.value.bark_url;
                 if(!url.endsWith('/')) url += '/';
                 const encTitle = encodeURIComponent(title);
                 const encBody = encodeURIComponent(body);
                 let finalUrl = `${url}${encTitle}/${encBody}?group=Reminders`;
-                
-                // soundMode: 'alarm' (强力), 'silent' (静音), 'default' (普通)
                 if (soundMode === 'alarm' && settings.value.bark_critical) {
                     finalUrl += `&level=critical&sound=gotosleep`;
                 } else if (soundMode === 'silent') {
                     finalUrl += `&sound=silence`;
                 }
-
                 try {
-                    // 即使是 no-cors，请求也会发出
                     await fetch(finalUrl, { mode: 'no-cors' }); 
                     console.log(`Bark sent: ${soundMode}`);
-                } catch(e) {
-                    console.error("Bark send failed", e);
-                }
+                } catch(e) { console.error(e); }
             };
 
-            // --- 辅助函数 ---
+            // ... (辅助函数保持不变) ...
             const getDefaultDateTime = () => {
                 const now = new Date();
                 now.setHours(now.getHours() + 1);
@@ -563,12 +601,10 @@
                 return opt ? opt.label : '一次性';
             };
 
-            // --- 操作 ---
+            // ... (CRUD 操作保持不变) ...
             const openAddModal = () => {
-                // 重置下拉框状态
                 dropdownStates.cat = false;
                 dropdownStates.cycle = false;
-                
                 form.value = { 
                     id: null, name: '', cycle: 'once', 
                     next_date: getDefaultDateTime(),
@@ -605,10 +641,7 @@
                         await addDoc(getColl("reminders"), data);
                         notificationTitle = "新提醒已添加";
                     }
-                    
-                    // 保存成功 -> 传入 'silent' 模式，静音发送
                     await sendBarkNotification(notificationTitle, `${form.value.name} - ${formatDateTime(form.value.next_date)}`, 'silent');
-
                     await loadData();
                     showModal.value = false;
                 } catch(e) { console.error(e); alert("保存失败: " + e.message); }
@@ -655,7 +688,6 @@
 
             const testBark = async () => {
                 if(!settings.value.bark_url) return alert("请先填写 Bark URL");
-                // 测试 -> 传入 'alarm' 模式，确保有铃声
                 await sendBarkNotification("提醒管家测试", "这是一条测试消息", 'alarm');
                 alert("请求已发送 (如未收到请检查 Bark 设置)");
             };
