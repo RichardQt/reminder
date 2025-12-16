@@ -222,16 +222,27 @@
                             </div>
                         </div>
 
-                        <!-- 强力提醒开关 (新增) -->
-                        <div class="flex items-center justify-between bg-red-50 p-4 rounded-xl border border-red-100">
-                            <div>
-                                <span class="text-sm font-bold text-red-700 flex items-center gap-1">⚡️ 强力提醒</span>
-                                <span class="text-xs text-red-500 block">开启后将播放闹钟铃声，无视静音</span>
+                        <!-- 强力提醒开关 (修复版) -->
+                        <div class="flex items-center justify-between bg-red-50 p-3.5 rounded-xl border border-red-100/60 transition-colors" :class="{'bg-red-50 border-red-200': form.is_critical}">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold text-red-700 flex items-center gap-1.5">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                                    强力提醒
+                                </span>
+                                <span class="text-[11px] text-red-500/80 font-medium mt-0.5">播放长铃声，无视静音模式</span>
                             </div>
-                            <div class="relative inline-block w-11 h-6 align-middle select-none transition duration-200 ease-in">
-                                <input type="checkbox" v-model="form.is_critical" class="absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer right-6 checked:right-0 duration-200 ease-in border-gray-300 checked:border-red-500"/>
-                                <label class="block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer peer-checked:bg-red-500" :class="{'bg-red-500': form.is_critical}"></label>
-                            </div>
+                            
+                            <!-- Standard Toggle -->
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" v-model="form.is_critical" class="sr-only peer">
+                                <!-- Track -->
+                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-red-500 transition-all duration-300 ease-out"></div>
+                                <!-- Knob -->
+                                <div class="absolute left-[2px] top-[2px] bg-white w-5 h-5 rounded-full shadow-sm ring-1 ring-black/5 transition-all duration-300 ease-out flex items-center justify-center"
+                                     :class="form.is_critical ? 'translate-x-full border-transparent' : 'translate-x-0'">
+                                    <svg v-if="form.is_critical" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                                </div>
+                            </label>
                         </div>
 
                         <div class="space-y-1.5">
@@ -415,12 +426,8 @@
                         if (item.next_date === currentIso) {
                             const uniqueKey = `${item.id}_${currentIso}`;
                             if (!notifiedMap.value.has(uniqueKey)) {
-                                // 逻辑更新：
-                                // 1. Title = item.name
-                                // 2. Mode = 如果 item.is_critical 为 true，强制 alarm
                                 const isCritical = item.is_critical || settings.value.bark_critical;
                                 const mode = isCritical ? 'alarm' : 'default';
-                                
                                 sendBarkNotification(item.name, item.notes || "⏰ 时间到了，请尽快处理", mode, item.target_device_id);
                                 notifiedMap.value.add(uniqueKey);
                             }
@@ -481,7 +488,7 @@
                     category_id: categories.value[0]?.id || '', 
                     target_device_id: 'all', 
                     notes: '',
-                    is_critical: false // Default false
+                    is_critical: false 
                 };
                 showModal.value = true;
             };
@@ -502,13 +509,12 @@
                         category_id: form.value.category_id, 
                         target_device_id: form.value.target_device_id,
                         notes: form.value.notes,
-                        is_critical: form.value.is_critical // Save critical state
+                        is_critical: form.value.is_critical 
                     };
                     if (form.value.id) await supabase.from('reminders').update(payload).eq('id', form.value.id);
                     else await supabase.from('reminders').insert([payload]);
                     await new Promise(r => setTimeout(r, 400)); await loadData(); showModal.value = false; 
                     
-                    // Test sound based on critical setting
                     const soundMode = form.value.is_critical ? 'alarm' : 'silent';
                     sendBarkNotification("设置成功", `${form.value.name}`, soundMode, form.value.target_device_id);
                 } catch (e) { alert("保存失败"); } finally { isSaving.value = false; }
@@ -543,7 +549,6 @@
                 }
                 if (targets.length === 0) return;
 
-                // Logic: if mode is alarm, it means critical
                 const level = (mode === 'alarm') ? 'critical' : 'active';
                 const sound = mode === 'silent' ? 'silence' : (mode === 'alarm' ? 'gotosleep' : 'default');
 
