@@ -333,7 +333,11 @@
             const categories = ref([]);
             const devices = ref([]);
             const settings = ref({ bark_critical: false });
-            const supabaseConfig = ref({ url: '', key: '' });
+            // 🔴 请在这里直接填入你的 Supabase 信息，这样手机打开就不用配置了
+            const supabaseConfig = ref({ 
+                url: 'https://mqwvjmysxevdxpyqklem.supabase.co', 
+                key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xd3ZqbXlzeGV2ZHhweXFrbGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEwMjAsImV4cCI6MjA4MTQwNzAyMH0.-06RwNccrhO4Q3VWkSyQaAhXBDer4sYZdJX2Zd8DOy0' 
+            });
             
             const showModal = ref(false);
             const showSettings = ref(false);
@@ -589,3 +593,4 @@
 </script>
 </body>
 </html>
+
