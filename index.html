@@ -192,16 +192,19 @@
                             <input v-model="form.name" placeholder="例如：还信用卡" required class="w-full bg-slate-50 border-transparent focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-3 outline-none transition font-semibold text-slate-800">
                         </div>
                         
+                        <!-- Grid for Category & Cycle (Aligned) -->
                         <div class="grid grid-cols-2 gap-4">
-                            <!-- 分类 -->
+                            <!-- Category -->
                             <div class="space-y-1.5 relative">
-                                <label class="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">分类 <span @click.stop="showCatModal = true" class="text-indigo-600 cursor-pointer hover:underline">管理</span></label>
+                                <label class="flex justify-between items-center h-5 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                    分类 <span @click.stop="showCatModal = true" class="text-indigo-600 cursor-pointer hover:underline">管理</span>
+                                </label>
                                 <div @click.stop="toggleDropdown('cat')" class="w-full bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 rounded-xl px-4 py-3 cursor-pointer flex items-center justify-between transition"><span class="text-slate-700 font-medium text-sm">{{ getCatName(form.category_id) }}</span><svg class="text-slate-400 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
                                 <div v-if="dropdownStates.cat" class="absolute z-10 top-full left-0 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden py-1"><div v-for="cat in categories" :key="cat.id" @click="selectCategory(cat.id)" class="px-4 py-2 hover:bg-slate-50 cursor-pointer flex items-center gap-2 text-sm text-slate-700"><span :class="['w-2 h-2 rounded-full', 'bg-'+cat.color+'-500']"></span>{{ cat.name }}</div></div>
                             </div>
-                            <!-- 周期 -->
+                            <!-- Cycle -->
                             <div class="space-y-1.5 relative">
-                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">重复</label>
+                                <label class="flex items-center h-5 text-xs font-bold text-slate-500 uppercase tracking-wider">重复</label>
                                 <div @click.stop="toggleDropdown('cycle')" class="w-full bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 rounded-xl px-4 py-3 cursor-pointer flex items-center justify-between transition"><span class="text-slate-700 font-medium text-sm">{{ getCycleText(form.cycle) }}</span><svg class="text-slate-400 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
                                 <div v-if="dropdownStates.cycle" class="absolute z-10 top-full left-0 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden py-1"><div v-for="opt in cycleOptions" :key="opt.val" @click="selectCycle(opt.val)" class="px-4 py-2 hover:bg-slate-50 cursor-pointer text-sm text-slate-700">{{ opt.label }}</div></div>
                             </div>
@@ -222,7 +225,7 @@
                             </div>
                         </div>
 
-                        <!-- 强力提醒开关 (修复版) -->
+                        <!-- 强力提醒开关 (Fixed) -->
                         <div class="flex items-center justify-between bg-red-50 p-3.5 rounded-xl border border-red-100/60 transition-colors" :class="{'bg-red-50 border-red-200': form.is_critical}">
                             <div class="flex flex-col">
                                 <span class="text-sm font-bold text-red-700 flex items-center gap-1.5">
@@ -232,12 +235,9 @@
                                 <span class="text-[11px] text-red-500/80 font-medium mt-0.5">播放长铃声，无视静音模式</span>
                             </div>
                             
-                            <!-- Standard Toggle -->
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" v-model="form.is_critical" class="sr-only peer">
-                                <!-- Track -->
                                 <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-red-500 transition-all duration-300 ease-out"></div>
-                                <!-- Knob -->
                                 <div class="absolute left-[2px] top-[2px] bg-white w-5 h-5 rounded-full shadow-sm ring-1 ring-black/5 transition-all duration-300 ease-out flex items-center justify-center"
                                      :class="form.is_critical ? 'translate-x-full border-transparent' : 'translate-x-0'">
                                     <svg v-if="form.is_critical" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
@@ -326,14 +326,13 @@
 
     createApp({
         setup() {
-            // State
             const loading = ref(false);
             const isSaving = ref(false);
             const dbReady = ref(false);
             const items = ref([]);
             const categories = ref([]);
             const devices = ref([]);
-            const settings = ref({ bark_critical: false }); // Global setting (backup)
+            const settings = ref({ bark_critical: false });
             const supabaseConfig = ref({ url: '', key: '' });
             
             const showModal = ref(false);
