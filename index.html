@@ -3,39 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>提醒管家 Pro</title>
+    <title>提醒管家 Pro (多设备版)</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9'></path><path d='M13.73 21a2 2 0 0 1-3.46 0'></path></svg>">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-        <!-- 🟢【这里是缺失的代码，请补上这一行】Vue 3 Global -->
+    <!-- Vue 3 Global -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Google Fonts -->
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif; background-color: #f3f4f6; }
+        body { font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif; background-color: #f8fafc; }
         [v-cloak] { display: none; }
-        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
         .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
         .fade-enter-from, .fade-leave-to { opacity: 0; }
-        .slide-enter-active, .slide-leave-active { transition: all 0.3s ease; }
+        .slide-enter-active, .slide-leave-active { transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         .slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(20px); }
-        
-        /* 滚动条美化 */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* 隐藏滚动条但保留功能 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="text-slate-800 antialiased selection:bg-indigo-100 selection:text-indigo-700">
 
-<div id="app" v-cloak class="min-h-screen relative pb-24" @click="handleGlobalClick">
+<div id="app" v-cloak class="min-h-screen relative pb-28" @click="handleGlobalClick">
     
     <!-- 顶部导航 -->
-    <header class="glass sticky top-0 z-40 border-b border-white/50 shadow-sm">
+    <header class="glass sticky top-0 z-40 border-b border-indigo-50/50 shadow-sm">
         <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="bg-gradient-to-tr from-indigo-600 to-purple-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-200">
@@ -45,16 +42,14 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <!-- 状态指示器 -->
                 <div v-if="dbReady" class="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span class="hidden sm:inline">运行中</span>
+                    <span class="hidden sm:inline">监控中</span>
                 </div>
                 <div v-else class="flex items-center gap-1.5 text-xs font-medium text-amber-600 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full cursor-pointer" @click="openSettings">
                     <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                    <span>未配置数据库</span>
+                    <span>未连接数据库</span>
                 </div>
-
                 <button @click="openSettings" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors" title="设置">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 </button>
@@ -64,29 +59,31 @@
 
     <main class="max-w-6xl mx-auto px-4 py-8 space-y-8">
         
-        <!-- 数据概览 -->
+        <!-- 统计面板 -->
         <div v-if="!loading && dbReady" class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="col-span-2 md:col-span-2 p-6 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-xl shadow-indigo-200 flex flex-col justify-between relative overflow-hidden group">
                 <div class="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-10 -translate-y-10"></div>
                 <div>
-                    <p class="text-indigo-100 font-medium mb-1">近期提醒</p>
+                    <p class="text-indigo-100 font-medium mb-1 text-sm">即将提醒</p>
                     <h3 class="text-4xl font-bold tracking-tight">{{ stats.upcomingCount }}</h3>
                 </div>
-                <div class="mt-4 flex items-center gap-2 text-sm text-indigo-100 bg-white/10 w-fit px-3 py-1 rounded-lg backdrop-blur-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                <div class="mt-4 flex items-center gap-2 text-xs font-semibold text-indigo-100 bg-white/10 w-fit px-3 py-1.5 rounded-lg backdrop-blur-sm border border-white/10">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
                     <span>未来 7 天</span>
                 </div>
             </div>
 
-            <div class="p-5 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 mb-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <div class="p-5 rounded-3xl bg-white border border-slate-100 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                    </div>
                 </div>
-                <p class="text-slate-500 text-sm font-medium">总计事项</p>
-                <h3 class="text-2xl font-bold text-slate-800">{{ items.length }}</h3>
+                <p class="text-slate-500 text-sm font-medium">设备在线</p>
+                <h3 class="text-2xl font-bold text-slate-800">{{ devices.length }}</h3>
             </div>
 
-            <div class="p-5 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow group">
+            <div class="p-5 rounded-3xl bg-white border border-slate-100 shadow-sm">
                 <div :class="['w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-colors', stats.overdueCount > 0 ? 'bg-rose-100 text-rose-500' : 'bg-emerald-50 text-emerald-500']">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                 </div>
@@ -95,7 +92,7 @@
             </div>
         </div>
 
-        <!-- 列表头部 -->
+        <!-- 列表工具栏 -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
                 我的列表
@@ -107,46 +104,24 @@
             </button>
         </div>
 
-        <!-- 列表内容 -->
-        <div v-if="!dbReady" class="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-300 shadow-sm">
-            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-            </div>
-            <h3 class="text-lg font-bold text-slate-800">欢迎使用</h3>
-            <p class="text-slate-500 mt-2 max-w-sm mx-auto">请先点击右上角的设置按钮，配置您的 Supabase 数据库连接信息。</p>
-            <button @click="openSettings" class="mt-6 text-indigo-600 font-semibold hover:text-indigo-700">去配置 &rarr;</button>
+        <!-- 列表区域 -->
+        <div v-if="!dbReady" class="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-300">
+            <p class="text-slate-500 font-medium">请先点击右上角设置，配置 Supabase 数据库</p>
         </div>
 
         <div v-else-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <!-- Loading Skeleton -->
-            <div v-for="i in 3" :key="i" class="bg-white rounded-2xl p-5 h-40 animate-pulse border border-slate-100">
-                <div class="flex gap-3 mb-4">
-                    <div class="w-10 h-10 bg-slate-100 rounded-xl"></div>
-                    <div class="flex-1 space-y-2 py-1">
-                        <div class="h-4 bg-slate-100 rounded w-3/4"></div>
-                        <div class="h-3 bg-slate-100 rounded w-1/2"></div>
-                    </div>
-                </div>
-                <div class="h-8 bg-slate-50 rounded mt-6"></div>
-            </div>
-        </div>
-
-        <div v-else-if="items.length === 0" class="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200">
-            <div class="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-300">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-            </div>
-            <p class="text-slate-500 font-medium">还没有任何提醒，添加一个试试？</p>
+            <div v-for="i in 3" :key="i" class="bg-white rounded-2xl p-5 h-40 animate-pulse border border-slate-100"></div>
         </div>
         
         <transition-group v-else name="slide" tag="div" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div v-for="item in sortedItems" :key="item.id" class="group relative bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <!-- 状态指示条 -->
+            <div v-for="item in items" :key="item.id" class="group relative bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                <!-- 状态条 -->
                 <div :class="['absolute left-0 top-6 bottom-6 w-1 rounded-r-full', getStatusColor(item.next_date)]"></div>
                 
                 <div class="pl-3">
                     <div class="flex justify-between items-start mb-3">
                         <div class="flex items-center gap-3 w-full">
-                            <div :class="['w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm transition-colors', 'bg-slate-50 text-' + getCatColor(item.category_id) + '-500']">
+                            <div :class="['w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm', 'bg-slate-50 text-' + getCatColor(item.category_id) + '-500']">
                                 <span class="font-bold text-lg select-none">{{ item.name.substring(0,1) }}</span>
                             </div>
                             <div class="min-w-0 flex-1">
@@ -161,9 +136,7 @@
                         </div>
                     </div>
 
-                    <div v-if="item.notes" class="text-xs text-slate-500 mt-3 mb-4 line-clamp-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                        {{ item.notes }}
-                    </div>
+                    <div v-if="item.notes" class="text-xs text-slate-500 mt-3 mb-4 line-clamp-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">{{ item.notes }}</div>
                     <div v-else class="mb-4"></div>
 
                     <div class="flex items-center justify-between text-sm mt-auto pt-3 border-t border-slate-50">
@@ -171,16 +144,24 @@
                             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Time</span>
                             <span :class="['font-bold font-mono text-sm flex items-center gap-1', getStatusTextColor(item.next_date)]">
                                 {{ formatDateTime(item.next_date) }}
-                                <span v-if="getDaysRemaining(item.next_date) < 0" class="bg-red-100 text-red-600 text-[10px] px-1 rounded ml-1">过期</span>
+                                <span v-if="isTimePast(item.next_date)" class="bg-rose-100 text-rose-600 text-[10px] px-1.5 rounded ml-1 font-bold">过期</span>
                             </span>
                         </div>
-                        <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button @click="editItem(item)" class="p-2 bg-slate-50 hover:bg-indigo-50 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors border border-transparent hover:border-indigo-100">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            </button>
-                            <button @click="deleteItem(item.id)" class="p-2 bg-slate-50 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-600 transition-colors border border-transparent hover:border-rose-100">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                            </button>
+                        <div class="flex gap-1 items-center">
+                            <!-- 设备指示器 -->
+                            <div v-if="item.target_device_id && item.target_device_id !== 'all'" class="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-md flex items-center gap-1" title="仅特定设备">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                                <span class="max-w-[60px] truncate">{{ getDeviceName(item.target_device_id) }}</span>
+                            </div>
+
+                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                                <button @click="editItem(item)" class="p-2 bg-slate-50 hover:bg-indigo-50 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </button>
+                                <button @click="deleteItem(item.id)" class="p-2 bg-slate-50 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-600 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -188,83 +169,65 @@
         </transition-group>
     </main>
 
-    <!-- Modal: Add/Edit -->
+    <!-- Modal: 新增/编辑提醒 -->
     <transition name="fade">
         <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-sm">
-            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-[scale-in_0.2s_ease-out]">
-                <!-- Header -->
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
                 <div class="bg-slate-50 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
                     <h3 class="text-lg font-bold text-slate-800">{{ form.id ? '编辑提醒' : '新建提醒' }}</h3>
-                    <button @click="showModal = false" class="text-slate-400 hover:text-slate-700 transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
+                    <button @click="showModal = false" class="text-slate-400 hover:text-slate-700"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                 </div>
-
-                <div class="p-6 overflow-y-auto custom-scrollbar">
+                <div class="p-6 overflow-y-auto no-scrollbar">
                     <form @submit.prevent="saveItem" class="space-y-5">
-                        <!-- 名称 -->
                         <div class="space-y-1.5">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">名称</label>
-                            <input v-model="form.name" placeholder="例如：还信用卡" required class="w-full bg-slate-50 border-transparent focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-3 outline-none transition font-semibold text-slate-800 placeholder-slate-400">
+                            <input v-model="form.name" placeholder="例如：还信用卡" required class="w-full bg-slate-50 border-transparent focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-3 outline-none transition font-semibold text-slate-800">
                         </div>
                         
                         <div class="grid grid-cols-2 gap-4">
-                            <!-- 分类 -->
+                            <!-- 分类选择 -->
                             <div class="space-y-1.5 relative">
-                                <label class="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                    分类 <span @click.stop="showCatModal = true" class="text-indigo-600 cursor-pointer hover:underline">管理</span>
-                                </label>
-                                <div @click.stop="toggleDropdown('cat')" class="w-full bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 rounded-xl px-4 py-3 cursor-pointer flex items-center justify-between transition">
-                                    <div class="flex items-center gap-2">
-                                        <span v-if="form.category_id" :class="['w-2 h-2 rounded-full', 'bg-'+getCatColor(form.category_id)+'-500']"></span>
-                                        <span class="text-slate-700 font-medium text-sm">{{ getCatName(form.category_id) }}</span>
-                                    </div>
-                                    <svg class="text-slate-400 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                                </div>
-                                <!-- Dropdown -->
-                                <div v-if="dropdownStates.cat" class="absolute z-10 top-full left-0 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden py-1">
-                                    <div v-for="cat in categories" :key="cat.id" @click="selectCategory(cat.id)" class="px-4 py-2 hover:bg-slate-50 cursor-pointer flex items-center gap-2 text-sm text-slate-700">
-                                        <span :class="['w-2 h-2 rounded-full', 'bg-'+cat.color+'-500']"></span>
-                                        {{ cat.name }}
-                                    </div>
-                                </div>
+                                <label class="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">分类 <span @click.stop="showCatModal = true" class="text-indigo-600 cursor-pointer hover:underline">管理</span></label>
+                                <div @click.stop="toggleDropdown('cat')" class="w-full bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 rounded-xl px-4 py-3 cursor-pointer flex items-center justify-between transition"><span class="text-slate-700 font-medium text-sm">{{ getCatName(form.category_id) }}</span><svg class="text-slate-400 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+                                <div v-if="dropdownStates.cat" class="absolute z-10 top-full left-0 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden py-1"><div v-for="cat in categories" :key="cat.id" @click="selectCategory(cat.id)" class="px-4 py-2 hover:bg-slate-50 cursor-pointer flex items-center gap-2 text-sm text-slate-700"><span :class="['w-2 h-2 rounded-full', 'bg-'+cat.color+'-500']"></span>{{ cat.name }}</div></div>
                             </div>
-
-                            <!-- 频率 -->
+                            <!-- 周期选择 -->
                             <div class="space-y-1.5 relative">
                                 <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">重复</label>
-                                <div @click.stop="toggleDropdown('cycle')" class="w-full bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 rounded-xl px-4 py-3 cursor-pointer flex items-center justify-between transition">
-                                    <span class="text-slate-700 font-medium text-sm">{{ getCycleText(form.cycle) }}</span>
-                                    <svg class="text-slate-400 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                                </div>
-                                <!-- Dropdown -->
-                                <div v-if="dropdownStates.cycle" class="absolute z-10 top-full left-0 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden py-1">
-                                    <div v-for="opt in cycleOptions" :key="opt.val" @click="selectCycle(opt.val)" class="px-4 py-2 hover:bg-slate-50 cursor-pointer text-sm text-slate-700">
-                                        {{ opt.label }}
-                                    </div>
-                                </div>
+                                <div @click.stop="toggleDropdown('cycle')" class="w-full bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 rounded-xl px-4 py-3 cursor-pointer flex items-center justify-between transition"><span class="text-slate-700 font-medium text-sm">{{ getCycleText(form.cycle) }}</span><svg class="text-slate-400 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+                                <div v-if="dropdownStates.cycle" class="absolute z-10 top-full left-0 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden py-1"><div v-for="opt in cycleOptions" :key="opt.val" @click="selectCycle(opt.val)" class="px-4 py-2 hover:bg-slate-50 cursor-pointer text-sm text-slate-700">{{ opt.label }}</div></div>
                             </div>
                         </div>
 
-                        <!-- 时间 -->
+                        <!-- 目标设备选择 (新增) -->
+                        <div class="space-y-1.5 relative">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">通知设备</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div @click="form.target_device_id = 'all'" :class="['cursor-pointer px-4 py-3 rounded-xl border text-sm font-medium transition flex items-center gap-2', form.target_device_id === 'all' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-slate-50 border-transparent text-slate-600 hover:bg-white']">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                                    全部设备
+                                </div>
+                                <div v-for="dev in devices" :key="dev.id" @click="form.target_device_id = dev.id" :class="['cursor-pointer px-4 py-3 rounded-xl border text-sm font-medium transition flex items-center gap-2 truncate', form.target_device_id === dev.id ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-slate-50 border-transparent text-slate-600 hover:bg-white']">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                                    {{ dev.name }}
+                                </div>
+                            </div>
+                            <p v-if="devices.length === 0" class="text-xs text-amber-500 mt-1">* 暂无注册设备，请先去设置中添加设备</p>
+                        </div>
+
                         <div class="space-y-1.5">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">时间</label>
                             <input type="datetime-local" v-model="form.next_date" required class="w-full bg-slate-50 border-transparent focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-3 outline-none transition text-slate-800 font-medium font-mono">
                         </div>
 
-                        <!-- 备注 -->
                         <div class="space-y-1.5">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">备注</label>
                             <textarea v-model="form.notes" rows="2" class="w-full bg-slate-50 border-transparent focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-3 outline-none transition text-slate-700 resize-none text-sm"></textarea>
                         </div>
 
-                        <!-- 按钮组 -->
                         <div class="pt-2 flex gap-3">
                             <button type="button" @click="showModal = false" class="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition">取消</button>
-                            <button type="submit" :disabled="isSaving" class="flex-1 py-3 rounded-xl bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2">
-                                <span v-if="isSaving" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                                {{ isSaving ? '保存中...' : '保存' }}
-                            </button>
+                            <button type="submit" :disabled="isSaving" class="flex-1 py-3 rounded-xl bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition disabled:opacity-70 flex justify-center items-center gap-2">{{ isSaving ? '保存中...' : '保存' }}</button>
                         </div>
                     </form>
                 </div>
@@ -272,71 +235,79 @@
         </div>
     </transition>
 
-    <!-- Modal: Settings (Supabase & Bark) -->
+    <!-- Modal: 系统设置 (包含设备管理) -->
     <transition name="fade">
         <div v-if="showSettings" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-sm" @click.stop>
-            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden p-6 space-y-5">
-                <h3 class="text-lg font-bold text-slate-800 border-b pb-2">系统设置</h3>
-                
-                <!-- Supabase Config -->
-                <div class="space-y-3">
-                    <p class="text-xs font-bold text-slate-400 uppercase">Supabase 数据库配置</p>
-                    <input v-model="supabaseConfig.url" placeholder="Supabase Project URL" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500">
-                    <input v-model="supabaseConfig.key" placeholder="Supabase Anon Key" type="password" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500">
-                    <button @click="initSupabase" class="w-full bg-slate-800 text-white py-2 rounded-lg text-sm hover:bg-slate-700 transition">连接数据库</button>
-                </div>
-
-                <!-- Bark Config -->
-                <div class="space-y-3 pt-2 border-t">
-                    <p class="text-xs font-bold text-slate-400 uppercase">Bark 通知 (iOS)</p>
-                    <input v-model="settings.bark_url" placeholder="https://api.day.app/KEY/" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500">
-                    <div class="flex items-center gap-2">
-                        <input type="checkbox" id="critical" v-model="settings.bark_critical" class="rounded text-indigo-600 focus:ring-indigo-500">
-                        <label for="critical" class="text-sm text-slate-700">强提醒模式 (Alarm Sound)</label>
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="p-6 overflow-y-auto no-scrollbar space-y-6">
+                    <h3 class="text-lg font-bold text-slate-800 border-b pb-2">系统设置</h3>
+                    
+                    <!-- 1. 数据库配置 -->
+                    <div class="space-y-3">
+                        <p class="text-xs font-bold text-slate-400 uppercase">Supabase 连接</p>
+                        <input v-model="supabaseConfig.url" placeholder="Project URL" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500">
+                        <input v-model="supabaseConfig.key" placeholder="Anon Key" type="password" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500">
+                        <button @click="initSupabase" class="w-full bg-slate-800 text-white py-2 rounded-lg text-sm hover:bg-slate-700 transition">连接 / 刷新数据库</button>
                     </div>
-                    <div class="flex gap-2">
-                        <button @click="saveSettings" :disabled="isSaving" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm hover:bg-indigo-700 transition">
-                            {{ isSaving ? '保存中...' : '保存配置' }}
-                        </button>
-                        <button @click="testBark" class="px-4 border border-slate-300 text-slate-600 py-2 rounded-lg text-sm hover:bg-slate-50">测试</button>
+
+                    <!-- 2. 设备管理 (新增) -->
+                    <div class="space-y-3 pt-2 border-t">
+                        <div class="flex justify-between items-center">
+                            <p class="text-xs font-bold text-slate-400 uppercase">通知设备管理</p>
+                            <button @click="isAddingDevice = !isAddingDevice" class="text-xs text-indigo-600 font-bold hover:underline">{{ isAddingDevice ? '取消添加' : '+ 添加设备' }}</button>
+                        </div>
+
+                        <!-- 添加设备表单 -->
+                        <div v-if="isAddingDevice" class="bg-indigo-50 p-3 rounded-xl space-y-2 border border-indigo-100">
+                            <input v-model="newDevice.name" placeholder="设备名称 (如: 我的iPhone)" class="w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm outline-none">
+                            <input v-model="newDevice.bark_key" placeholder="Bark Key (URL最后那串字符)" class="w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm outline-none">
+                            <button @click="addDevice" class="w-full bg-indigo-600 text-white py-1.5 rounded-lg text-sm hover:bg-indigo-700">保存设备</button>
+                        </div>
+
+                        <!-- 设备列表 -->
+                        <div class="space-y-2">
+                            <div v-for="dev in devices" :key="dev.id" class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-white p-2 rounded-lg text-indigo-500 shadow-sm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-800">{{ dev.name }}</p>
+                                        <p class="text-xs text-slate-400 truncate max-w-[150px]">{{ dev.bark_key }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click="testDevice(dev)" class="text-xs px-2 py-1 bg-white border rounded text-slate-500 hover:text-indigo-600">测试</button>
+                                    <button @click="deleteDevice(dev.id)" class="text-slate-300 hover:text-rose-500 px-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                                </div>
+                            </div>
+                            <div v-if="devices.length === 0 && !isAddingDevice" class="text-center text-slate-400 text-xs py-2">暂无设备，请添加</div>
+                        </div>
+                    </div>
+
+                    <!-- 3. 其他设置 -->
+                    <div class="space-y-3 pt-2 border-t">
+                        <p class="text-xs font-bold text-slate-400 uppercase">通知选项</p>
+                        <div class="flex items-center gap-2"><input type="checkbox" id="critical" v-model="settings.bark_critical" class="rounded text-indigo-600"><label for="critical" class="text-sm text-slate-700">全局强提醒模式</label></div>
+                        <button @click="saveSettings" :disabled="isSaving" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm hover:bg-indigo-700 mt-2">{{ isSaving ? '保存中...' : '保存配置' }}</button>
                     </div>
                 </div>
-
-                <div class="text-right">
-                    <button @click="showSettings = false" class="text-sm text-slate-400 hover:text-slate-600">关闭</button>
-                </div>
+                <div class="p-4 border-t text-right bg-slate-50"><button @click="showSettings = false" class="text-sm text-slate-400 hover:text-slate-600">关闭</button></div>
             </div>
         </div>
     </transition>
 
-    <!-- Modal: Categories -->
+    <!-- Modal: 分类管理 -->
     <transition name="fade">
         <div v-if="showCatModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-sm" @click.stop>
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden p-6">
                 <h3 class="text-lg font-bold mb-4">分类管理</h3>
-                <div class="max-h-60 overflow-y-auto mb-4 space-y-2 custom-scrollbar">
-                    <div v-for="cat in categories" :key="cat.id" class="p-2.5 rounded-lg bg-slate-50 flex justify-between items-center group">
-                        <div class="flex items-center gap-3">
-                            <div :class="['w-3 h-3 rounded-full', 'bg-'+cat.color+'-500']"></div>
-                            <span class="text-sm font-medium">{{ cat.name }}</span>
-                        </div>
-                        <button v-if="!cat.is_system" @click="deleteCategory(cat.id)" class="text-slate-300 hover:text-rose-500 transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        </button>
-                        <span v-else class="text-[10px] text-slate-300 uppercase font-bold tracking-wider">系统</span>
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    <input v-model="newCatName" placeholder="新分类名称" class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
-                    <button @click="addCategory" :disabled="isSaving" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">添加</button>
-                </div>
-                <div class="mt-4 text-right">
-                    <button @click="showCatModal = false" class="text-sm text-slate-400 hover:text-slate-600">关闭</button>
-                </div>
+                <div class="max-h-60 overflow-y-auto mb-4 space-y-2 no-scrollbar"><div v-for="cat in categories" :key="cat.id" class="p-2.5 rounded-lg bg-slate-50 flex justify-between items-center group"><div class="flex items-center gap-3"><div :class="['w-3 h-3 rounded-full', 'bg-'+cat.color+'-500']"></div><span class="text-sm font-medium">{{ cat.name }}</span></div><button v-if="!cat.is_system" @click="deleteCategory(cat.id)" class="text-slate-300 hover:text-rose-500 transition"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div>
+                <div class="flex gap-2"><input v-model="newCatName" placeholder="新分类" class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none"><button @click="addCategory" :disabled="isSaving" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">添加</button></div>
+                <div class="mt-4 text-right"><button @click="showCatModal = false" class="text-sm text-slate-400 hover:text-slate-600">关闭</button></div>
             </div>
         </div>
     </transition>
-
 </div>
 
 <script>
@@ -344,26 +315,26 @@
 
     createApp({
         setup() {
-            // State
+            // ============ State ============
             const loading = ref(false);
-            const isSaving = ref(false); // 保存状态
+            const isSaving = ref(false);
             const dbReady = ref(false);
             const items = ref([]);
             const categories = ref([]);
-            const settings = ref({ bark_url: '', bark_critical: false });
+            const devices = ref([]); // 新增：设备列表
+            const settings = ref({ bark_critical: false });
             const supabaseConfig = ref({ url: '', key: '' });
             
-            // UI Controls
             const showModal = ref(false);
             const showSettings = ref(false);
             const showCatModal = ref(false);
+            const isAddingDevice = ref(false); // 新增：添加设备状态
             const dropdownStates = reactive({ cat: false, cycle: false });
             
-            // Forms
             const form = ref({});
             const newCatName = ref('');
+            const newDevice = ref({ name: '', bark_key: '' }); // 新增：新设备表单
 
-            // Logic
             let supabase = null;
             let reminderInterval = null;
             const notifiedMap = ref(new Set());
@@ -375,9 +346,8 @@
                 { label: '每月', val: 'monthly' }
             ];
 
-            // 1. 初始化
+            // ============ Lifecycle ============
             onMounted(() => {
-                // 尝试从本地读取配置
                 const savedConfig = localStorage.getItem('remind_sb_config');
                 if (savedConfig) {
                     supabaseConfig.value = JSON.parse(savedConfig);
@@ -387,9 +357,13 @@
                 }
             });
 
+            onUnmounted(() => {
+                if (reminderInterval) clearInterval(reminderInterval);
+            });
+
+            // ============ Init & Load ============
             const initSupabase = async () => {
                 if (!supabaseConfig.value.url || !supabaseConfig.value.key) return;
-                
                 try {
                     supabase = window.supabase.createClient(supabaseConfig.value.url, supabaseConfig.value.key);
                     localStorage.setItem('remind_sb_config', JSON.stringify(supabaseConfig.value));
@@ -398,7 +372,7 @@
                     startReminderCheck();
                     showSettings.value = false;
                 } catch (e) {
-                    alert("数据库连接失败，请检查配置");
+                    alert("数据库连接失败，请检查 URL 和 Key");
                     console.error(e);
                 }
             };
@@ -407,39 +381,56 @@
                 if (!supabase) return;
                 loading.value = true;
                 try {
+                    // 1. Reminders
                     const { data: remData } = await supabase.from('reminders').select('*').order('next_date', { ascending: true });
-                    items.value = remData || [];
-
+                    // 2. Categories
                     const { data: catData } = await supabase.from('categories').select('*');
                     categories.value = catData || [];
-
+                    // 3. Settings
                     const { data: setData } = await supabase.from('settings').select('*').limit(1);
-                    if (setData && setData.length > 0) {
-                        settings.value = setData[0];
+                    if (setData && setData.length > 0) settings.value = setData[0];
+                    // 4. Devices (新增)
+                    const { data: devData } = await supabase.from('devices').select('*').order('created_at', { ascending: true });
+                    devices.value = devData || [];
+
+                    if (remData && remData.length > 0) {
+                        await autoCleanup(remData);
+                    } else {
+                        items.value = [];
                     }
-                } catch (e) {
-                    console.error("Load failed", e);
-                } finally {
-                    loading.value = false;
+                } catch (e) { console.error(e); } finally { loading.value = false; }
+            };
+
+            // ============ Logic: Cleanup ============
+            const autoCleanup = async (allItems) => {
+                const keepItems = [];
+                const deleteIds = [];
+                allItems.forEach(item => {
+                    const days = getDaysRemaining(item.next_date);
+                    if (days <= -7) deleteIds.push(item.id);
+                    else keepItems.push(item);
+                });
+                items.value = keepItems;
+                if (deleteIds.length > 0 && supabase) {
+                    try { await supabase.from('reminders').delete().in('id', deleteIds); } catch(e){}
                 }
             };
 
-            // 2. 核心逻辑：提醒检查
+            // ============ Logic: Reminder Check ============
             const startReminderCheck = () => {
                 if (reminderInterval) clearInterval(reminderInterval);
                 reminderInterval = setInterval(() => {
-                    if (!items.value.length || !settings.value.bark_url) return;
-                    
+                    if (!items.value.length || !devices.value.length) return; // 必须有设备才发
                     const now = new Date();
                     const offset = now.getTimezoneOffset() * 60000;
                     const currentIso = (new Date(now - offset)).toISOString().slice(0, 16);
-
+                    
                     items.value.forEach(item => {
-                        if (!item.next_date) return;
                         if (item.next_date === currentIso) {
                             const uniqueKey = `${item.id}_${currentIso}`;
                             if (!notifiedMap.value.has(uniqueKey)) {
-                                sendBarkNotification("时间到了！", `${item.name}`, 'alarm');
+                                // 传递 target_device_id
+                                sendBarkNotification("⏰ 时间到了", `${item.name}`, 'alarm', item.target_device_id);
                                 notifiedMap.value.add(uniqueKey);
                             }
                         }
@@ -447,189 +438,193 @@
                 }, 10000); // 10s check
             };
 
-            // 3. 业务操作
-            const openAddModal = () => {
-                resetForm();
-                showModal.value = true;
+            // ============ Logic: Time Helper ============
+            const isTimePast = (dateStr) => {
+                if (!dateStr) return false;
+                return new Date() > new Date(dateStr);
             };
 
-            const resetForm = () => {
-                const now = new Date();
-                now.setHours(now.getHours() + 1);
-                now.setMinutes(0);
-                const offset = now.getTimezoneOffset() * 60000;
-                const defaultTime = (new Date(now - offset)).toISOString().slice(0, 16);
-
-                form.value = {
-                    id: null,
-                    name: '',
-                    cycle: 'once',
-                    next_date: defaultTime,
-                    category_id: categories.value[0]?.id || '', // fix logic
-                    notes: ''
-                };
+            const getDaysRemaining = (d) => {
+                if (!d) return 0;
+                const now = new Date(); now.setHours(0,0,0,0);
+                const target = new Date(d); target.setHours(0,0,0,0);
+                return Math.floor((target - now) / 86400000);
             };
 
-            const editItem = (item) => {
-                form.value = JSON.parse(JSON.stringify(item)); // Deep copy
-                showModal.value = true;
+            // ============ Logic: Styles ============
+            const getStatusColor = (d) => {
+                if (isTimePast(d)) return 'bg-rose-500';
+                const days = getDaysRemaining(d);
+                if (days === 0) return 'bg-amber-400';
+                if (days === 1) return 'bg-indigo-400';
+                return 'bg-emerald-400';
             };
 
-            const saveItem = async () => {
-                if (!supabase) return;
-                isSaving.value = true;
-                
-                try {
-                    const payload = {
-                        name: form.value.name,
-                        cycle: form.value.cycle,
-                        next_date: form.value.next_date,
-                        category_id: form.value.category_id,
-                        notes: form.value.notes
-                    };
+            const getStatusTextColor = (d) => {
+                if (isTimePast(d)) return 'text-rose-600';
+                const days = getDaysRemaining(d);
+                if (days === 0) return 'text-amber-600';
+                return 'text-slate-500';
+            };
 
-                    if (form.value.id) {
-                        await supabase.from('reminders').update(payload).eq('id', form.value.id);
-                    } else {
-                        await supabase.from('reminders').insert([payload]);
+            const stats = computed(() => {
+                let u = 0, o = 0;
+                items.value.forEach(i => {
+                    if (isTimePast(i.next_date)) o++;
+                    else {
+                        const d = getDaysRemaining(i.next_date);
+                        if (d <= 7) u++;
                     }
+                });
+                return { upcomingCount: u, overdueCount: o };
+            });
 
-                    // 模拟更平滑的UX
-                    await new Promise(r => setTimeout(r, 500));
-                    
-                    await loadData();
-                    showModal.value = false;
-                    sendBarkNotification("设置成功", `${form.value.name}`, 'silent');
-                } catch (e) {
-                    alert("保存失败: " + e.message);
-                } finally {
-                    isSaving.value = false;
-                }
-            };
-
-            const deleteItem = async (id) => {
-                if (!confirm('确认删除?')) return;
-                await supabase.from('reminders').delete().eq('id', id);
-                await loadData();
-            };
-
-            const addCategory = async () => {
-                if (!newCatName.value) return;
-                isSaving.value = true;
-                try {
-                    await supabase.from('categories').insert([{ name: newCatName.value, color: 'gray', is_system: false }]);
-                    newCatName.value = '';
-                    await loadData();
-                } finally {
-                    isSaving.value = false;
-                }
-            };
-
-            const deleteCategory = async (id) => {
-                if (!confirm('删除分类?')) return;
-                await supabase.from('categories').delete().eq('id', id);
-                await loadData();
-            };
-
-            const saveSettings = async () => {
-                if (!supabase) return;
-                isSaving.value = true;
-                try {
-                    const payload = { 
-                        bark_url: settings.value.bark_url, 
-                        bark_critical: settings.value.bark_critical 
-                    };
-                    
-                    if (settings.value.id) {
-                        await supabase.from('settings').update(payload).eq('id', settings.value.id);
-                    } else {
-                        await supabase.from('settings').insert([payload]);
-                        // Refresh to get ID
-                        const { data } = await supabase.from('settings').select('*').limit(1);
-                        if(data) settings.value = data[0];
-                    }
-                    alert("配置已保存");
-                } catch(e) {
-                    console.error(e);
-                } finally {
-                    isSaving.value = false;
-                }
-            };
-
-            const sendBarkNotification = async (title, body, mode) => {
-                if (!settings.value.bark_url) return;
-                let url = settings.value.bark_url;
-                if (!url.endsWith('/')) url += '/';
-                const finalUrl = `${url}${encodeURIComponent(title)}/${encodeURIComponent(body)}?group=Reminders&level=${settings.value.bark_critical && mode === 'alarm' ? 'critical' : 'active'}&sound=${mode === 'silent' ? 'silence' : (mode === 'alarm' ? 'gotosleep' : 'default')}`;
-                
-                try { await fetch(finalUrl, { mode: 'no-cors' }); } catch(e) {}
-            };
-
-            const testBark = () => {
-                sendBarkNotification('Test', 'Hello World', 'alarm');
-            };
-
-            // Helpers
-            const getCatName = (id) => categories.value.find(c => String(c.id) === String(id))?.name || '未分类';
-            const getCatColor = (id) => categories.value.find(c => String(c.id) === String(id))?.color || 'gray';
-            const getCycleText = (v) => cycleOptions.find(o => o.val === v)?.label || v;
-            
             const formatDateTime = (dateStr) => {
                 if (!dateStr) return '';
                 const date = new Date(dateStr);
                 return `${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
             };
-            
-            const getDaysRemaining = (d) => {
-                const today = new Date(); today.setHours(0,0,0,0);
-                const target = new Date(d); target.setHours(0,0,0,0);
-                return Math.ceil((target - today) / (86400000));
+
+            const getCatName = (id) => categories.value.find(c => String(c.id) === String(id))?.name || '未分类';
+            const getCatColor = (id) => categories.value.find(c => String(c.id) === String(id))?.color || 'gray';
+            const getCycleText = (v) => cycleOptions.find(o => o.val === v)?.label || v;
+            const getDeviceName = (id) => devices.value.find(d => String(d.id) === String(id))?.name || '未知设备';
+
+            // ============ CRUD ============
+            const openAddModal = () => {
+                const now = new Date(); now.setHours(now.getHours() + 1); now.setMinutes(0);
+                const offset = now.getTimezoneOffset() * 60000;
+                form.value = { 
+                    id: null, 
+                    name: '', 
+                    cycle: 'once', 
+                    next_date: (new Date(now - offset)).toISOString().slice(0, 16), 
+                    category_id: categories.value[0]?.id || '', 
+                    target_device_id: 'all', // 默认为所有设备
+                    notes: '' 
+                };
+                showModal.value = true;
             };
 
-            const sortedItems = computed(() => {
-                return items.value; // Supabase already sorted
-            });
+            const editItem = (item) => { 
+                form.value = JSON.parse(JSON.stringify(item));
+                // 兼容旧数据，如果没有 target_device_id，默认为 all
+                if (!form.value.target_device_id) form.value.target_device_id = 'all';
+                showModal.value = true; 
+            };
 
-            const stats = computed(() => {
-                let u = 0, o = 0;
-                items.value.forEach(i => {
-                    const d = getDaysRemaining(i.next_date);
-                    if (d < 0) o++;
-                    else if (d <= 7) u++;
+            const saveItem = async () => {
+                if (!supabase) return; isSaving.value = true;
+                try {
+                    const payload = { 
+                        name: form.value.name, 
+                        cycle: form.value.cycle, 
+                        next_date: form.value.next_date, 
+                        category_id: form.value.category_id, 
+                        target_device_id: form.value.target_device_id, // 保存设备ID
+                        notes: form.value.notes 
+                    };
+                    if (form.value.id) await supabase.from('reminders').update(payload).eq('id', form.value.id);
+                    else await supabase.from('reminders').insert([payload]);
+                    await new Promise(r => setTimeout(r, 400)); await loadData(); showModal.value = false; 
+                    sendBarkNotification("设置成功", `${form.value.name}`, 'silent', form.value.target_device_id);
+                } catch (e) { alert("保存失败"); } finally { isSaving.value = false; }
+            };
+
+            const deleteItem = async (id) => {
+                if (!confirm('确认删除?')) return;
+                const prev = [...items.value]; items.value = items.value.filter(i => i.id !== id);
+                try { await supabase.from('reminders').delete().eq('id', id); await loadData(); } catch (e) { items.value = prev; }
+            };
+
+            // ============ Device Management ============
+            const addDevice = async () => {
+                if (!newDevice.value.name || !newDevice.value.bark_key) return alert("请填写完整");
+                isSaving.value = true;
+                try {
+                    await supabase.from('devices').insert([newDevice.value]);
+                    newDevice.value = { name: '', bark_key: '' };
+                    isAddingDevice.value = false;
+                    await loadData();
+                } catch(e) { console.error(e); } finally { isSaving.value = false; }
+            };
+
+            const deleteDevice = async (id) => {
+                if (!confirm('删除此设备?')) return;
+                await supabase.from('devices').delete().eq('id', id);
+                await loadData();
+            };
+
+            const testDevice = (dev) => {
+                _sendToSingleDevice(dev.bark_key, "测试消息", "设备连接成功！", 'active', 'default');
+            };
+
+            // ============ Bark Logic (Enhanced) ============
+            const sendBarkNotification = async (title, body, mode, targetDeviceId) => {
+                // 1. 确定目标设备
+                let targets = [];
+                if (!targetDeviceId || targetDeviceId === 'all') {
+                    targets = devices.value; // 发给所有设备
+                } else {
+                    const dev = devices.value.find(d => String(d.id) === String(targetDeviceId));
+                    if (dev) targets = [dev];
+                }
+
+                if (targets.length === 0) return;
+
+                // 2. 批量发送
+                const level = (settings.value.bark_critical && mode === 'alarm') ? 'critical' : 'active';
+                const sound = mode === 'silent' ? 'silence' : (mode === 'alarm' ? 'gotosleep' : 'default');
+
+                targets.forEach(dev => {
+                    _sendToSingleDevice(dev.bark_key, title, body, level, sound);
                 });
-                return { upcomingCount: u, overdueCount: o };
-            });
-
-            const getStatusColor = (d) => {
-                const days = getDaysRemaining(d);
-                if (days < 0) return 'bg-rose-500';
-                if (days <= 1) return 'bg-amber-400';
-                return 'bg-emerald-400';
             };
 
-            const getStatusTextColor = (d) => {
-                const days = getDaysRemaining(d);
-                if (days < 0) return 'text-rose-500';
-                if (days <= 1) return 'text-amber-500';
-                return 'text-slate-500';
+            const _sendToSingleDevice = (key, title, body, level, sound) => {
+                // Bark URL 基础结构: https://api.day.app/KEY/TITLE/BODY
+                // 处理 Key 可能包含完整 URL 的情况
+                let baseUrl = "https://api.day.app/";
+                let cleanKey = key;
+                if (key.startsWith("http")) {
+                    if (key.endsWith("/")) cleanKey = key.slice(0, -1);
+                    else cleanKey = key;
+                    baseUrl = ""; // Key 本身就是 URL
+                }
+
+                const url = `${baseUrl}${cleanKey}/${encodeURIComponent(title)}/${encodeURIComponent(body)}?group=Reminders&level=${level}&sound=${sound}`;
+                fetch(url, { mode: 'no-cors' }).catch(e => console.error(e));
             };
 
-            const toggleDropdown = (type) => {
-                if (type === 'cat') { dropdownStates.cat = !dropdownStates.cat; dropdownStates.cycle = false; }
-                if (type === 'cycle') { dropdownStates.cycle = !dropdownStates.cycle; dropdownStates.cat = false; }
+            // ============ Category & Settings ============
+            const addCategory = async () => { if (!newCatName.value) return; isSaving.value = true; try { await supabase.from('categories').insert([{ name: newCatName.value, color: 'gray', is_system: false }]); newCatName.value = ''; await loadData(); } finally { isSaving.value = false; } };
+            const deleteCategory = async (id) => { if (!confirm('删除分类?')) return; await supabase.from('categories').delete().eq('id', id); await loadData(); };
+            
+            const saveSettings = async () => {
+                if (!supabase) return; isSaving.value = true;
+                try {
+                    const payload = { bark_critical: settings.value.bark_critical };
+                    // 这里不再保存 bark_url，因为已经用 devices 表替代了
+                    if (settings.value.id) await supabase.from('settings').update(payload).eq('id', settings.value.id);
+                    else { await supabase.from('settings').insert([payload]); const { data } = await supabase.from('settings').select('*').limit(1); if(data && data.length) settings.value = data[0]; }
+                    alert("配置已保存");
+                } catch(e) { alert("失败"); } finally { isSaving.value = false; }
             };
 
+            // ============ UI Helpers ============
+            const toggleDropdown = (type) => { if (type === 'cat') { dropdownStates.cat = !dropdownStates.cat; dropdownStates.cycle = false; } if (type === 'cycle') { dropdownStates.cycle = !dropdownStates.cycle; dropdownStates.cat = false; } };
             const selectCategory = (id) => { form.value.category_id = id; dropdownStates.cat = false; };
             const selectCycle = (v) => { form.value.cycle = v; dropdownStates.cycle = false; };
             const handleGlobalClick = () => { dropdownStates.cat = false; dropdownStates.cycle = false; };
             const openSettings = () => showSettings.value = true;
 
             return {
-                loading, isSaving, dbReady, items, categories, settings, supabaseConfig,
-                showModal, showSettings, showCatModal, form, newCatName, dropdownStates, cycleOptions, stats, sortedItems,
+                loading, isSaving, dbReady, items, categories, devices, settings, supabaseConfig,
+                showModal, showSettings, showCatModal, form, newCatName, newDevice, isAddingDevice, dropdownStates, cycleOptions, stats,
                 initSupabase, loadData, openAddModal, editItem, saveItem, deleteItem,
-                addCategory, deleteCategory, saveSettings, testBark,
-                getCatName, getCatColor, getCycleText, formatDateTime, getDaysRemaining, getStatusColor, getStatusTextColor,
+                addDevice, deleteDevice, testDevice,
+                addCategory, deleteCategory, saveSettings,
+                getCatName, getCatColor, getCycleText, getDeviceName, formatDateTime, isTimePast, getStatusColor, getStatusTextColor,
                 toggleDropdown, selectCategory, selectCycle, handleGlobalClick, openSettings
             };
         }
@@ -637,4 +632,3 @@
 </script>
 </body>
 </html>
-
