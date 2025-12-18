@@ -779,8 +779,7 @@
           items.value = items.value.filter(i => i.id !== id);
           try {
             await supabase.from('reminders').delete().eq('id', id);
-            // 静默刷新，保持列表一致性且不触发 loading UI
-            loadData({ silent: true });
+            // 乐观更新已完成，无需刷新
           } catch (e) {
             items.value = prev;
             console.error(e);
