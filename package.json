@@ -1,0 +1,9 @@
+{
+  "name": "reminder-bark",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.48.0"
+  }
+}
