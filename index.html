@@ -241,10 +241,8 @@
                 <span
                   :class="['font-bold font-mono text-sm flex items-center gap-1.5', getStatusTextColor(item.next_date, item)]">
                   {{ item.next_date ? formatDateTime(item.next_date) : '—' }}
-                  <span v-if="isCompleted(item)"
-                    class="bg-green-100 text-green-600 text-[10px] px-1.5 py-0.5 rounded font-bold leading-none">已完成</span>
-                  <span v-else-if="isTimePast(item.next_date)"
-                    class="bg-rose-100 text-rose-600 text-[10px] px-1.5 py-0.5 rounded font-bold leading-none">过期</span>
+                  <span v-if="isCompleted(item) || isTimePast(item.next_date)"
+                    class="bg-rose-100 text-rose-600 text-[10px] px-1.5 py-0.5 rounded font-bold leading-none">已过期</span>
                 </span>
               </div>
 
@@ -679,7 +677,7 @@
         };
 
         const getStatusColor = (d, item) => {
-          if (!d && item && isCompleted(item)) return 'bg-green-500';
+          if (!d && item && isCompleted(item)) return 'bg-rose-500';
           if (!d) return 'bg-slate-300';
           if (isTimePast(d)) return 'bg-rose-500';
           const days = getDaysRemaining(d);
@@ -689,7 +687,7 @@
         };
 
         const getStatusTextColor = (d, item) => {
-          if (!d && item && isCompleted(item)) return 'text-green-600';
+          if (!d && item && isCompleted(item)) return 'text-rose-600';
           if (!d) return 'text-slate-400';
           if (isTimePast(d)) return 'text-rose-600';
           const days = getDaysRemaining(d);
