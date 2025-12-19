@@ -198,7 +198,8 @@
         <div v-for="item in items" :key="item.id"
           class="group relative bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
           <!-- Status Bar -->
-          <div :class="['absolute left-0 top-6 bottom-6 w-1 rounded-r-full', getStatusColor(item.next_date)]"></div>
+          <div :class="['absolute left-0 top-6 bottom-6 w-1 rounded-r-full', getStatusColor(item.next_date, item)]">
+          </div>
 
           <div class="pl-3 flex-1 flex flex-col">
             <!-- Top Section -->
@@ -238,9 +239,11 @@
               <div class="flex flex-col gap-0.5">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Time</span>
                 <span
-                  :class="['font-bold font-mono text-sm flex items-center gap-1.5', getStatusTextColor(item.next_date)]">
-                  {{ formatDateTime(item.next_date) }}
-                  <span v-if="isTimePast(item.next_date)"
+                  :class="['font-bold font-mono text-sm flex items-center gap-1.5', getStatusTextColor(item.next_date, item)]">
+                  {{ item.next_date ? formatDateTime(item.next_date) : '—' }}
+                  <span v-if="isCompleted(item)"
+                    class="bg-green-100 text-green-600 text-[10px] px-1.5 py-0.5 rounded font-bold leading-none">已完成</span>
+                  <span v-else-if="isTimePast(item.next_date)"
                     class="bg-rose-100 text-rose-600 text-[10px] px-1.5 py-0.5 rounded font-bold leading-none">过期</span>
                 </span>
               </div>
@@ -667,6 +670,7 @@
         };
 
         const isTimePast = (dateStr) => { if (!dateStr) return false; return new Date() > new Date(dateStr); };
+        const isCompleted = (item) => item.next_date === null && (!item.cycle || item.cycle === 'once');
         const getDaysRemaining = (d) => {
           if (!d) return 0;
           const now = new Date(); now.setHours(0, 0, 0, 0);
@@ -674,7 +678,9 @@
           return Math.floor((target - now) / 86400000);
         };
 
-        const getStatusColor = (d) => {
+        const getStatusColor = (d, item) => {
+          if (!d && item && isCompleted(item)) return 'bg-green-500';
+          if (!d) return 'bg-slate-300';
           if (isTimePast(d)) return 'bg-rose-500';
           const days = getDaysRemaining(d);
           if (days === 0) return 'bg-amber-400';
@@ -682,7 +688,9 @@
           return 'bg-emerald-400';
         };
 
-        const getStatusTextColor = (d) => {
+        const getStatusTextColor = (d, item) => {
+          if (!d && item && isCompleted(item)) return 'text-green-600';
+          if (!d) return 'text-slate-400';
           if (isTimePast(d)) return 'text-rose-600';
           const days = getDaysRemaining(d);
           if (days === 0) return 'text-amber-600';
@@ -858,7 +866,7 @@
           initSupabase, loadData, openAddModal, editItem, saveItem, deleteItem,
           addDevice, deleteDevice, testDevice,
           addCategory, deleteCategory,
-          getCatName, getCatColor, getCycleText, getDeviceName, formatDateTime, isTimePast, getStatusColor, getStatusTextColor,
+          getCatName, getCatColor, getCycleText, getDeviceName, formatDateTime, isTimePast, isCompleted, getStatusColor, getStatusTextColor,
           toggleDropdown, selectCategory, selectCycle, handleGlobalClick, openSettings
         };
       }
