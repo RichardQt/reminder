@@ -560,8 +560,8 @@
         const newDevice = ref({ name: '', bark_key: '' });
 
         let supabase = null;
-        let reminderInterval = null;
-        const notifiedMap = ref(new Set());
+        // Plan B：提醒由 Supabase Edge Function + pg_cron 触发。
+        // 这里保留 Bark 仅用于「测试设备 / 保存成功提示」等即时操作，避免前端轮询导致重复提醒。
 
         const cycleOptions = [
           { label: '一次性', val: 'once' },
@@ -569,6 +569,23 @@
           { label: '每周', val: 'weekly' },
           { label: '每月', val: 'monthly' }
         ];
+
+        // datetime-local <-> UTC ISO helpers
+        // - input 控件值是本地时间字符串：YYYY-MM-DDTHH:mm（无时区）
+        // - Supabase/PG 侧建议存 timestamptz（UTC ISO，带 Z）
+        const pad2 = (n) => String(n).padStart(2, '0');
+        const toDatetimeLocalValue = (d) => {
+          const dt = new Date(d);
+          if (Number.isNaN(dt.getTime())) return '';
+          return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}T${pad2(dt.getHours())}:${pad2(dt.getMinutes())}`;
+        };
+
+        const datetimeLocalToUtcIso = (localValue) => {
+          if (!localValue) return null;
+          const dt = new Date(localValue);
+          if (Number.isNaN(dt.getTime())) return null;
+          return dt.toISOString();
+        };
 
         onMounted(() => {
           const savedConfig = localStorage.getItem('remind_sb_config');
@@ -608,9 +625,7 @@
           });
         });
 
-        onUnmounted(() => {
-          if (reminderInterval) clearInterval(reminderInterval);
-        });
+        onUnmounted(() => { });
 
         const initSupabase = async () => {
           if (!supabaseConfig.value.url || !supabaseConfig.value.key) return false;
@@ -619,7 +634,6 @@
             localStorage.setItem('remind_sb_config', JSON.stringify(supabaseConfig.value));
             dbReady.value = true;
             await loadData();
-            startReminderCheck();
             showSettings.value = false;
             return true;
           } catch (e) { alert("数据库连接失败"); console.error(e); return false; }
@@ -638,55 +652,18 @@
             const { data: devData } = await supabase.from('devices').select('*').order('created_at', { ascending: true });
             devices.value = devData || [];
 
-            if (remData && remData.length > 0) await autoCleanup(remData);
+            // 仅在前端过滤展示：避免“加载时自动删除过期项”导致体验像全量刷新。
+            // 过期超过 7 天的记录建议交给后端 cron 每天清理一次（见方案 B SQL）。
+            if (remData && remData.length > 0) items.value = filterVisibleReminders(remData);
             else items.value = [];
           } catch (e) { console.error(e); } finally { if (!silent) loading.value = false; }
         };
 
-        const autoCleanup = async (allItems) => {
-          const keepItems = [];
-          const deleteIds = [];
-          allItems.forEach(item => {
+        const filterVisibleReminders = (allItems) => {
+          return (allItems || []).filter(item => {
             const days = getDaysRemaining(item.next_date);
-            if (days <= -7) deleteIds.push(item.id);
-            else keepItems.push(item);
+            return days > -7;
           });
-          items.value = keepItems;
-          if (deleteIds.length > 0 && supabase) {
-            try { await supabase.from('reminders').delete().in('id', deleteIds); } catch (e) { }
-          }
-        };
-
-        const startReminderCheck = () => {
-          if (reminderInterval) clearInterval(reminderInterval);
-
-          const checkDueReminders = () => {
-            if (!items.value.length || !devices.value.length) return;
-
-            const now = Date.now();
-            const windowMs = 60000; // 允许 60 秒误差，避免必须秒级对齐
-
-            items.value.forEach(item => {
-              if (!item.next_date) return;
-              const targetMs = new Date(item.next_date).getTime();
-              const delta = targetMs - now;
-
-              // 到期前后 60s 发送一次
-              if (delta <= windowMs && delta >= -windowMs) {
-                const uniqueKey = `${item.id}_${Math.floor(targetMs / windowMs)}`;
-                if (!notifiedMap.value.has(uniqueKey)) {
-                  const isCritical = item.is_critical || settings.value.bark_critical;
-                  const mode = isCritical ? 'alarm' : 'default';
-                  sendBarkNotification(item.name, item.notes || "⏰ 时间到了，请尽快处理", mode, item.target_device_id);
-                  notifiedMap.value.add(uniqueKey);
-                }
-              }
-            });
-          };
-
-          // 立即检查一次，随后每 10 秒检查
-          checkDueReminders();
-          reminderInterval = setInterval(checkDueReminders, 10000);
         };
 
         const isTimePast = (dateStr) => { if (!dateStr) return false; return new Date() > new Date(dateStr); };
@@ -734,10 +711,10 @@
 
         const openAddModal = () => {
           const now = new Date(); now.setHours(now.getHours() + 1); now.setMinutes(0);
-          const offset = now.getTimezoneOffset() * 60000;
           form.value = {
             id: null, name: '', cycle: 'once',
-            next_date: (new Date(now - offset)).toISOString().slice(0, 16),
+            // 表单使用本地时间，便于用户理解
+            next_date: toDatetimeLocalValue(now),
             category_id: categories.value[0]?.id || '',
             target_device_id: 'all',
             notes: '',
@@ -749,24 +726,62 @@
         const editItem = (item) => {
           form.value = JSON.parse(JSON.stringify(item));
           if (!form.value.target_device_id) form.value.target_device_id = 'all';
+          // 数据库中是 UTC timestamptz（ISO 带 Z）时，转换成 datetime-local 需要的本地格式
+          if (form.value.next_date) {
+            form.value.next_date = toDatetimeLocalValue(form.value.next_date);
+          }
           showModal.value = true;
         };
 
         const saveItem = async () => {
           if (!supabase) return; isSaving.value = true;
           try {
+            const nextDateUtcIso = datetimeLocalToUtcIso(form.value.next_date);
+            if (!nextDateUtcIso) throw new Error('INVALID_NEXT_DATE');
+
             const payload = {
               name: form.value.name,
               cycle: form.value.cycle,
-              next_date: form.value.next_date,
+              // 关键：存 UTC ISO（带 Z），否则服务器侧 now()/cron 会按 UTC 误差触发
+              next_date: nextDateUtcIso,
               category_id: form.value.category_id,
               target_device_id: form.value.target_device_id,
               notes: form.value.notes,
-              is_critical: form.value.is_critical
+              is_critical: form.value.is_critical,
+              // 方案 B：如果用户手动修改了时间，允许重新触发（清空去重/处理中标记）
+              last_notified_for: null,
+              processing_at: null,
+              processing_token: null,
+              processing_for: null
             };
-            if (form.value.id) await supabase.from('reminders').update(payload).eq('id', form.value.id);
-            else await supabase.from('reminders').insert([payload]);
-            await new Promise(r => setTimeout(r, 400)); await loadData(); showModal.value = false;
+            if (form.value.id) {
+              const { data, error } = await supabase
+                .from('reminders')
+                .update(payload)
+                .eq('id', form.value.id)
+                .select('*')
+                .single();
+              if (error) throw error;
+
+              // 局部更新，避免全量刷新
+              const idx = items.value.findIndex(i => String(i.id) === String(form.value.id));
+              if (idx >= 0) items.value[idx] = data;
+            } else {
+              const { data, error } = await supabase
+                .from('reminders')
+                .insert([payload])
+                .select('*')
+                .single();
+              if (error) throw error;
+              items.value.unshift(data);
+            }
+
+            // 重新排序 + 过滤展示（与 loadData 逻辑保持一致）
+            items.value = filterVisibleReminders(
+              [...items.value].sort((a, b) => new Date(a.next_date).getTime() - new Date(b.next_date).getTime())
+            );
+
+            showModal.value = false;
 
             const soundMode = form.value.is_critical ? 'alarm' : 'silent';
             sendBarkNotification("设置成功", `${form.value.name}`, soundMode, form.value.target_device_id);
